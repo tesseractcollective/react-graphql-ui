@@ -1,0 +1,11 @@
+{
+  "name": "@tesseractcollective/react-graphql-ui",
+  "module": "dist/react-graphql-ui.es.js",
+  "main": "dist/react-graphql-ui.es.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/react-graphql-ui.es.js"
+    }
+  }
+}
