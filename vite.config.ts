@@ -14,7 +14,7 @@ export default defineConfig({
     sourcemap: 'inline',
     emptyOutDir: true,
     rollupOptions: {
-      external: ['react', 'react-dom', 'urql', 'primereact', 'react-transition-group', 'wonka', '@fullcalendar/core', 'quill'],
+      external: ['react', 'react-dom', 'urql', 'primereact', 'react-transition-group', 'wonka', '@fullcalendar/core', 'quill', '@tesseractcollective/react-graphql'],
       output: {
         globals: {
           react: 'React',

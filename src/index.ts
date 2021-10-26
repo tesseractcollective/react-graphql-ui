@@ -9,3 +9,11 @@ export { default as useDataTablePagination } from './hooks/datatable/useDataTabl
 export { default as useDataTableWhere } from './hooks/datatable/useDataTableWhere';
 export * as PrimeReactDefaultComponents from './scalarComponents/primereact';
 export type { FlexFormFieldOutputType, ScalarComponentPropsBase, FlexFormComponent } from './types/generic';
+export type {
+  UseDataTableQueryArgsAtom,
+  ColumnFilterMatchModeTypeForEquality,
+  ColumnFilterMatchModeTypeForString,
+  ColumnPropsForEquality,
+  ColumnPropsForString,
+  UseDataTableArgs,
+} from './hooks/datatable/useDataTable';

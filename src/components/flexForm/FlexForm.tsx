@@ -152,7 +152,7 @@ function FlexForm(props: IFlexFormProps) {
     mutationState.executeMutation(data);
   };
 
-  const rgUIContext = useContext(ReactGraphqlUIContext);
+  const rgUIContext = useContext<any>(ReactGraphqlUIContext);
 
   const fieldsElements = useMemo(() => {
     const RelationshipInput = props.components?.RelationshipInput || rgUIContext.defaultComponents['RelationshipInput'];
