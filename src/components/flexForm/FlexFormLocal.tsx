@@ -46,7 +46,7 @@ export interface FlexFormLocalProps {
     }
   >
   onDataFromGrid?: (data: any) => void
-  control?: Control
+  control: Control
 }
 
 const rgUIContext = useContext(ReactGraphqlUIContext);
