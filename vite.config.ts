@@ -14,13 +14,14 @@ export default defineConfig({
     sourcemap: 'inline',
     emptyOutDir: true,
     rollupOptions: {
-      external: ['react', 'react-dom', 'urql', 'primereact'],
+      external: ['react', 'react-dom', 'urql', 'primereact', 'react-transition-group', 'wonka', '@fullcalendar/core', 'quill'],
       output: {
         globals: {
           react: 'React',
           urql: 'urql',
           'react-loading': 'ReactLoading',
           'react-dom': 'ReactDom',
+          'react-transition-group': 'ReactTransitionGroup',
         },
       },
     },
