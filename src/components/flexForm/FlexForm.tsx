@@ -212,7 +212,7 @@ function FlexForm(props: IFlexFormProps) {
           props.grid?.styles ||
           `grid grid-cols-${
             props.grid?.columnCount ?? '3'
-          } gap-x-12 gap-y-8 justify-items-stretch`
+          } gap-x-12 gap-y-8 justify-items-stretch mb-5`
         }
       >
         {...fieldsElements}
