@@ -1,18 +1,21 @@
-import { InputMask } from 'primereact/inputmask'
-import { InputText } from 'primereact/inputtext'
-import React, { FunctionComponent } from 'react'
-import { useController } from 'react-hook-form'
+import { Editor } from 'primereact/editor';
+import { InputMask } from 'primereact/inputmask';
+import { InputText } from 'primereact/inputtext';
+import React, { FunctionComponent } from 'react';
+import { useController } from 'react-hook-form';
 import { ScalarComponentPropsBase } from '../../types/generic';
-import LabelFor from './LabelFor'
+import LabelFor from './LabelFor';
 
 export interface IStringInputProps extends ScalarComponentPropsBase {
-  mask?: string
+  mask?: string;
+  richText?: boolean;
 }
 
 const StringInput: FunctionComponent<IStringInputProps> = function StringInput({
   fieldInfo,
   control,
   mask,
+  richText,
   rules,
   ...passthroughProps
 }) {
@@ -25,36 +28,107 @@ const StringInput: FunctionComponent<IStringInputProps> = function StringInput({
     control,
     rules,
     defaultValue: '',
-  })
+  });
+
+  // default is input text, based on props it may be a different component
+  let inputComponent = (
+    <InputText
+      id={'ff-' + fieldInfo.name}
+      ref={ref}
+      {...inputProps}
+      className={`p-inputtext-sm w-full ${invalid ? 'p-invalid' : ''}`}
+      {...passthroughProps}
+    />
+  );
+
+  if (mask) {
+    inputComponent = (
+      <InputMask
+        mask={mask}
+        id={'ff-' + fieldInfo.name}
+        ref={ref}
+        {...inputProps}
+        className="p-inputtext-sm w-full"
+        {...passthroughProps}
+      />
+    );
+  } else if (richText) {
+    // This specifies what options are available to the user in the toolbar
+    const toolbarHeader = (
+      <span className="ql-formats">
+        <select className="ql-size" aria-label="Size" defaultValue="normal">
+          <option label="Small" value="small" />
+          <option label="Normal" value="normal" />
+          <option label="Large" value="large" />
+        </select>
+        <button className="ql-bold" aria-label="Bold"></button>
+        <button className="ql-italic" aria-label="Italic"></button>
+        <button className="ql-underline" aria-label="Underline"></button>
+        <button className="ql-strike" aria-label="Strike"></button>
+        <button className="ql-link" aria-label="Link"></button>
+        <button className="ql-blockquote" aria-label="Blockquote"></button>
+        <button
+          className="ql-list"
+          value="ordered"
+          aria-label="Ordered List"
+        ></button>
+        <button
+          className="ql-list"
+          value="bullet"
+          aria-label="Unordered List"
+        ></button>
+        <button className="ql-align" aria-label="Align"></button>
+      </span>
+    );
+
+    inputComponent = (
+      <Editor
+        id={'ff-' + fieldInfo.name}
+        ref={ref}
+        {...inputProps}
+        // need to manually trigger the onChange from onTextChange
+        onTextChange={(e) => inputProps.onChange(e.htmlValue)}
+        // HACK: There is currently (afaik) no easy way to detect the focus event
+        // for the Editor component, meaning the floatlabel won't work correctly
+        // setting this class is a hack to force the float label to always appear
+        // as though the wrapper has been filled to have the proper style
+        className={'p-inputwrapper-filled'}
+        // This changes what buttons are displayed to change formatting
+        headerTemplate={toolbarHeader}
+        // This format will allow you to paste with those formats even if there's no
+        // button for them in the toolbar
+        formats={[
+          'bold',
+          'font',
+          'color',
+          'italic',
+          'link',
+          'size',
+          'strike',
+          'underline',
+          'blockquote',
+          'header',
+          'indent',
+          'list',
+          'align',
+          'direction',
+        ]}
+        {...passthroughProps}
+      />
+    );
+  }
 
   return (
     <div className="">
       <div className="p-float-label">
-        {mask ? (
-          <InputMask
-            mask={mask}
-            id={'ff-' + fieldInfo.name}
-            ref={ref}
-            {...inputProps}
-            className="p-inputtext-sm w-full"
-            {...passthroughProps}
-          />
-        ) : (
-          <InputText
-            id={'ff-' + fieldInfo.name}
-            ref={ref}
-            {...inputProps}
-            className={`p-inputtext-sm w-full ${invalid ? 'p-invalid' : ''}`}
-            {...passthroughProps}
-          />
-        )}
+        {inputComponent}
         <LabelFor fieldInfo={fieldInfo} />
       </div>
       <small id="username2-help" className="p-error p-d-block">
         {error?.message || error?.type}
       </small>
     </div>
-  )
-}
+  );
+};
 
-export default StringInput
+export default StringInput;
