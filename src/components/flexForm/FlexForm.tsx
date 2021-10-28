@@ -53,6 +53,15 @@ export interface IFlexFormProps {
   >;
   onDataChange?: (data: any) => void;
   labels?: Record<string, string>;
+  /**
+   * Pass in the name of the field you wish to prepocess, and a function that returns a value.
+   * This value will be used to process the associated data _before_ setting the default value
+   * in the form. Any values in here will override default preprocessing
+   *
+   * Current Defaults:
+   * timestamp, timestamptz -> converts from string to js Date object
+   */
+  preprocessData?: Record<string, (data: any) => any>
 }
 
 function FlexForm(props: IFlexFormProps) {
@@ -62,12 +71,53 @@ function FlexForm(props: IFlexFormProps) {
     fields: _fields,
     api: externalApi,
     configs,
-    data,
+    data: _data,
+    preprocessData,
     insertConfig,
     updateConfig,
     onDataChange,
     props: passthroughProps,
   } = props;
+
+  const data = useMemo(() => {
+    // Grab a deep copy of _data. We want that to compare to the original if needed.
+    let data = _data
+    if (typeof _data === 'object' && !Array.isArray(_data)) {
+      data = { ..._data }
+    } else {
+      return null
+    }
+
+    // PreProcess with some defaults. For instance if there's a timestamp field
+    // the default preprocessing is to convert it into a Date object.
+    // If that is undesirable a user can overrid that by providing a custom preprocess function to simply return the value
+    for (const [datumName, datumValue] of Object.entries(_data)) {
+      const datumTypeName = config.fields?.fieldSimpleMap?.[datumName]?.typeName
+
+      // Convert timestamps to Date objects
+      if (
+        typeof datumValue === 'string' &&
+        (datumTypeName === 'timestamp' || datumTypeName === 'timestamptz')
+      ) {
+        data[datumName] = new Date(datumValue)
+      }
+    }
+
+    // Custom pre-processing. Overrides changes made by default preprocessors by reading from _data directly
+    // If user needs to transform the data before it populates the form. EG: string to date
+    if (preprocessData) {
+      // Go through all their transforms
+      for (const [dataName, dataTransform] of Object.entries(preprocessData)) {
+        // If that field name exists
+        if (dataName in _data) {
+          //.. apply the transformation
+          data[dataName] = dataTransform(_data[dataName])
+        }
+      }
+    }
+
+    return data
+  }, [_data])
 
   const [gqlError, setGqlError] = useState<string | null>(null);
 
