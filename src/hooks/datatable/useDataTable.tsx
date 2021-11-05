@@ -227,7 +227,8 @@ export default function useDataTable<T = Record<string, any>>(
 
   //upsertDialog
   const upsertDialog = useMemo(() => {
-    if (!needsActionColumn) {
+    // Only include upsert dialog when updating or inserting is enabled
+    if (!args?.update && !args?.insert) {
       return null;
     }
 
