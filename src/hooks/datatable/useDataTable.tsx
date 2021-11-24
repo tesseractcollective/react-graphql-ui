@@ -14,7 +14,6 @@ import { Dialog } from 'primereact/dialog';
 import { Toolbar } from 'primereact/toolbar';
 import queryString from 'query-string';
 import React, { ReactNode, useMemo, useState } from 'react';
-import { useHistory } from 'react-router-dom';
 import FlexForm, { IFlexFormProps } from '../../components/flexForm/FlexForm';
 import useDataTableColumns, { ColumnFromConfig } from './useDataTableColumns';
 import useDataTableOrderBy, { UseDataTableOrderby } from './useDataTableOrderBy';
@@ -65,13 +64,13 @@ export interface UseDataTableArgs<T> {
     upsertGqlConfig?: HasuraDataConfig;
     upsertFlexFormProps?: Partial<IFlexFormProps>;
   };
-  setIdInQueryOnClick?: boolean;
   /** Overrides the primary key field name. (default name: id) Only useful if setIdInQueryOnClick is true.*/
   primaryKeyName?: string;
   queryArgsAtom?: PrimitiveAtom<UseDataTableQueryArgsAtom>;
   sortable?: boolean;
   filterable?: boolean;
   columnProps?: Record<string, ColumnPropsForEquality | ColumnPropsForString>;
+  onRowClick?: (path: string) => void;
 }
 
 const backupAtom = atom({});
@@ -94,8 +93,7 @@ export default function useDataTable<T = Record<string, any>>(
   setSelectedRow: (row?: any) => void;
   hideUpsertDialog: () => void;
   hideDeleteDialog: () => void;
-} {
-  const history = useHistory();
+} {  
   const { gqlConfig, queryManyState } = args;
   const needsActionColumn = args.update || args.delete;
   const [selectedRow, setSelectedRow] = useState<T | undefined | null>();
@@ -120,12 +118,12 @@ export default function useDataTable<T = Record<string, any>>(
     let baseProps: Partial<DataTableProps> = {
       value: paginationProps.currentRows,
     };
-    if (args.setIdInQueryOnClick) {
+    if (args.onRowClick) {
       baseProps = {
         ...baseProps,
         selectionMode: 'single',
         selection: selectedRow,
-        onSelectionChange: (e) => updateSelectRowInQuery(e.value[gqlConfig.primaryKey[0]], history),
+        onSelectionChange: (e) => updateSelectRowInQuery(e.value[gqlConfig.primaryKey[0]], args.onRowClick),
         dataKey: gqlConfig.primaryKey[0],
       };
     }
@@ -350,10 +348,12 @@ function UpsertComponent({ gqlConfig, row, onSuccess, flexFormProps }: UpsertCom
   return <FlexForm config={gqlConfig} api={api} isNew={!!row} onSuccess={onSuccess} {...flexFormProps} />;
 }
 
-function updateSelectRowInQuery(primaryKeyValue: string, history: H.History<H.LocationState>, primaryKeyName = 'id') {
+function updateSelectRowInQuery(primaryKeyValue: string, onRowClick?: (path: string) => void, primaryKeyName = 'id') {
   const currentParams = queryString.parse(window.location.search);
   let nextParams: { [key: string]: any } = {};
   nextParams = { ...currentParams, [primaryKeyName]: primaryKeyValue };
   const queryStr = queryString.stringify(nextParams);
-  history.push(window.location.pathname + '?' + queryStr);
+  if (onRowClick) {
+    onRowClick(window.location.pathname + '?' + queryStr);
+  }
 }

@@ -17,7 +17,7 @@ const TimestampInput: FunctionComponent<ITimestampInputProps> =
       name: fieldInfo.name,
       control,
       rules,
-      defaultValue: '',
+      defaultValue: new Date(),
     })
 
     return (

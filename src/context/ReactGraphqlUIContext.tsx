@@ -6,9 +6,9 @@ import { FlexFormComponent } from '../types/generic';
 console.log('ReactGraphqlUIContext: Are react versions the same', window.React1 === React);
 
 export const ReactGraphqlUIContext = React.createContext<{
-  // defaultComponents: Record<string, FlexFormComponent>;
-  // configsMap: HasuraConfigType;
+  defaultComponents: Record<string, FlexFormComponent>;
+  configsMap: HasuraConfigType;
 }>({
-  // defaultComponents: {},
-  // configsMap: {},
+  defaultComponents: {},
+  configsMap: {},
 });
