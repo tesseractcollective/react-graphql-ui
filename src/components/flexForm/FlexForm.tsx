@@ -207,10 +207,13 @@ function FlexForm(props: IFlexFormProps) {
 
   return (
     <form onSubmit={handleSubmit(props.onSubmit ?? onSubmit)} className={`flex flex-col p-8`}>
-      <div
-        className={`grid grid-cols-${props.grid?.columnCount ?? '3'} gap-x-12 gap-y-8 justify-items-stretch ${
-          props.grid?.styles || ''
-        }`}
+     <div
+        className={
+          props.grid?.styles ||
+          `grid grid-cols-${
+            props.grid?.columnCount ?? '3'
+          } gap-x-12 gap-y-8 justify-items-stretch mb-5`
+        }
       >
         {...fieldsElements}
       </div>
