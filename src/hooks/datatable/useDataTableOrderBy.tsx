@@ -17,7 +17,7 @@ const reactPrimeSortOrderToHasuraMap: Record<string, string> = {
 };
 
 //Need to add sortable to your columns <Column field="..." sortable />
-export default function useDataTableOrderBy(args: { queryArgsAtom: PrimitiveAtom<UseDataTableQueryArgsAtom> }) {
+export default function useDataTableOrderBy(args: { queryArgsAtom: PrimitiveAtom<UseDataTableQueryArgsAtom> }): UseDataTableOrderby {
   const [queryArgs, setQueryArgs] = useAtom(args.queryArgsAtom);
   const [lastSortEvent, setLastSortEvent] = useState<DataTableSortParams>();
 
