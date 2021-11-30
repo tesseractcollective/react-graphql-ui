@@ -15,6 +15,11 @@ export interface IFlexFormProps {
   api?: UseReactGraphqlApi;
   //If you have existing data for your fields like a "row" give it here, else empty object
   data?: any;
+  /**
+   * Useful when you want a field defaulted without allowing modification.
+   * Any fields listed here will not be display, but will still exist for the purposes of submitting.
+   */
+  hideFields?: [string];
   //If you want to override what is in the config.fragment you can give a list of fieldNames here.
   //Currenty only fields found in the fragment will work, so this filters down
   //Note: id ignored by default because you can't insert or update an id
@@ -53,6 +58,7 @@ export interface IFlexFormProps {
   >;
   onDataChange?: (data: any) => void;
   labels?: Record<string, string>;
+  disableAllFields?: boolean;
 }
 
 function FlexForm(props: IFlexFormProps) {
@@ -62,14 +68,39 @@ function FlexForm(props: IFlexFormProps) {
     fields: _fields,
     api: externalApi,
     configs,
-    data,
+    data: _data,
     insertConfig,
     updateConfig,
     onDataChange,
+    disableAllFields,
     props: passthroughProps,
   } = props;
 
   const [gqlError, setGqlError] = useState<string | null>(null);
+
+  const data = useMemo(() => {
+    // Grab a deep copy of _data. We want that to compare to the original if needed.
+    let data = _data;
+    if (!_data || Array.isArray(_data)) {
+      return _data;
+    } else {
+      data = { ..._data };
+    }
+
+    // PreProcess with some defaults. For instance if there's a timestamp field
+    // the default preprocessing is to convert it into a Date object.
+    // If that is undesirable a user can overrid that by providing a custom preprocess function to simply return the value
+    for (const [datumName, datumValue] of Object.entries(data)) {
+      const datumTypeName = config.fields?.fieldSimpleMap?.[datumName]?.typeName;
+
+      // Convert timestamps to Date objects
+      if (typeof datumValue === 'string' && (datumTypeName === 'timestamp' || datumTypeName === 'timestamptz')) {
+        data[datumName] = new Date(datumValue);
+      }
+    }
+
+    return data;
+  }, [_data]);
 
   useEffect(() => {
     if (onDataChange) {
@@ -77,7 +108,7 @@ function FlexForm(props: IFlexFormProps) {
     }
   }, [data]);
 
-  let fields = useMemo(() => {
+  let fields: string[] = useMemo(() => {
     if (_fields?.length) {
       return _fields;
     }
@@ -148,17 +179,40 @@ function FlexForm(props: IFlexFormProps) {
   });
 
   const onSubmit = (data: any) => {
-    console.log('FLEX FORM DEFAULT SUBMIT', data);
-    mutationState.executeMutation(data);
+    let strippedData = data;
+
+    // If this is a preexisting item (ie an update/edit) we likely don't want to send the entire object
+    // which will include things such as the created_at timestamp that we cannot modify those columns
+    if (!isNew) {
+      // rip out only the keys that are in the fields
+      strippedData = Object.keys(data)
+        .filter((key) => fields.includes(key))
+        .reduce((obj: any, key: string) => {
+          obj[key] = data[key];
+          return obj;
+        }, {});
+    }
+
+    mutationState.executeMutation(strippedData);
   };
 
   const rgUIContext = useContext<any>(ReactGraphqlUIContext);
 
   const fieldsElements = useMemo(() => {
     const RelationshipInput = props.components?.RelationshipInput || rgUIContext.defaultComponents['RelationshipInput'];
-
     return fields
-      .filter((f) => f !== 'id')
+      .filter((fieldName: string) => {
+        if (fieldName === 'id') {
+          // Never allow id
+          return false;
+        }
+        // nothing to hide? keep it all!
+        if (!props?.hideFields?.length) {
+          return true;
+        }
+        // otherwise don't show stuff in this list
+        return !props.hideFields.includes(fieldName);
+      })
       .map((field) => {
         const { fieldInfo, defaultComponent } = getDefaultComponentForScalar(
           config,
@@ -199,6 +253,7 @@ function FlexForm(props: IFlexFormProps) {
             control={control}
             configs={configs}
             rules={{ required: fieldInfo.isNonNull, ...rules }}
+            disabled={disableAllFields}
             {...propsToPass}
           />
         );
@@ -207,12 +262,10 @@ function FlexForm(props: IFlexFormProps) {
 
   return (
     <form onSubmit={handleSubmit(props.onSubmit ?? onSubmit)} className={`flex flex-col p-8`}>
-     <div
+      <div
         className={
           props.grid?.styles ||
-          `grid grid-cols-${
-            props.grid?.columnCount ?? '3'
-          } gap-x-12 gap-y-8 justify-items-stretch mb-5`
+          `grid grid-cols-${props.grid?.columnCount ?? '3'} gap-x-12 gap-y-8 justify-items-stretch mb-5`
         }
       >
         {...fieldsElements}

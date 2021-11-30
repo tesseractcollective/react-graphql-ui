@@ -1,7 +1,10 @@
 import {
-  HasuraDataConfig, useReactGraphql
+  HasuraDataConfig,
+  IFieldOutputType,
+  useReactGraphql,
 } from '@tesseractcollective/react-graphql'
 import Case from 'case'
+import { GraphQLEnumValue } from 'graphql'
 import { Dropdown, DropdownProps } from 'primereact/dropdown'
 import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 import { RegisterOptions, useController } from 'react-hook-form'
@@ -28,6 +31,7 @@ export interface SelectViaRelationshipProps {
     'valueAsNumber' | 'valueAsDate' | 'setValueAs' | 'disabled'
   >
   dropdownProps?: DropdownProps
+  fieldInfo?: IFieldOutputType
 }
 
 const SelectViaRelationship: FunctionComponent<SelectViaRelationshipProps> =
@@ -37,6 +41,7 @@ const SelectViaRelationship: FunctionComponent<SelectViaRelationshipProps> =
       configForRelationship,
       relationshipColumnNameForLabel,
       relationshipColumnNameForValue,
+      fieldInfo,
       autoSave,
       styles,
       control,
@@ -75,17 +80,27 @@ const SelectViaRelationship: FunctionComponent<SelectViaRelationshipProps> =
     const queryState = dataApi.useInfiniteQueryMany({
       pageSize: 1000,
       where: whereClause,
+      pause: fieldInfo?.enumValues ? true : false,
       ...rest,
     })
 
     const options = useMemo(() => {
-      return queryState.items?.map?.((itm: any) => {
-        return {
-          value: itm?.[relationshipColumnNameForValue as any],
-          label: itm?.[relationshipColumnNameForLabel as any],
-        }
-      })
-    }, [queryState.items.length])
+      if (queryState.items.length) {
+        return queryState.items?.map?.((itm: any) => {
+          return {
+            value: itm?.[relationshipColumnNameForValue as any],
+            label: itm?.[relationshipColumnNameForLabel as any],
+          }
+        })
+      } else if (fieldInfo?.enumValues) {
+        return fieldInfo?.enumValues?.map?.((itm: GraphQLEnumValue) => {
+          return {
+            value: itm.value,
+            label: itm.description || itm.name,
+          }
+        })
+      }
+    }, [queryState.items.length, fieldInfo?.enumValues])
 
     return (
       <div className={props?.wrapperClassName}>
