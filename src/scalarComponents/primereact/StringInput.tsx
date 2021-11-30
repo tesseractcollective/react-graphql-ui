@@ -9,6 +9,7 @@ import LabelFor from './LabelFor';
 export interface IStringInputProps extends ScalarComponentPropsBase {
   mask?: string;
   richText?: boolean;
+  helpText?: string; // TODO: Should this go on ScalarComponentPropsBase for all types instead?
 }
 
 const StringInput: FunctionComponent<IStringInputProps> = function StringInput({
@@ -124,6 +125,9 @@ const StringInput: FunctionComponent<IStringInputProps> = function StringInput({
         {inputComponent}
         <LabelFor fieldInfo={fieldInfo} />
       </div>
+      <small id={'ff-' + fieldInfo.name + '-help'} className="p-d-block">
+        {passthroughProps?.helpText}
+      </small>
       <small id="username2-help" className="p-error p-d-block">
         {error?.message || error?.type}
       </small>

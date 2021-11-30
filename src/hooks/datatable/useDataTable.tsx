@@ -5,7 +5,6 @@ import {
   MutateState,
   useReactGraphql,
 } from '@tesseractcollective/react-graphql';
-import * as H from 'history';
 import { atom, PrimitiveAtom } from 'jotai';
 import { Button } from 'primereact/button';
 import { Column, ColumnProps } from 'primereact/column';
@@ -16,13 +15,25 @@ import queryString from 'query-string';
 import React, { ReactNode, useMemo, useState } from 'react';
 import FlexForm, { IFlexFormProps } from '../../components/flexForm/FlexForm';
 import useDataTableColumns, { ColumnFromConfig } from './useDataTableColumns';
-import useDataTableOrderBy, { UseDataTableOrderby } from './useDataTableOrderBy';
-import useDataTablePagination, { DataTablePaginationProps } from './useDataTablePagination';
+import useDataTableOrderBy, {
+  UseDataTableOrderby,
+} from './useDataTableOrderBy';
+import useDataTablePagination, {
+  DataTablePaginationProps,
+} from './useDataTablePagination';
 import useDataTableWhere, { UseDataTableWhere } from './useDataTableWhere';
 
-export interface UseDataTableQueryArgsAtom extends Partial<IUseInfiniteQueryMany> {}
+export interface UseDataTableQueryArgsAtom
+  extends Partial<IUseInfiniteQueryMany> {}
 
-export type ColumnFilterMatchModeTypeForEquality = 'equals' | 'notEquals' | 'in' | 'lt' | 'lte' | 'gt' | 'gte';
+export type ColumnFilterMatchModeTypeForEquality =
+  | 'equals'
+  | 'notEquals'
+  | 'in'
+  | 'lt'
+  | 'lte'
+  | 'gt'
+  | 'gte';
 export type ColumnFilterMatchModeTypeForString =
   | 'startsWith'
   | 'contains'
@@ -64,6 +75,14 @@ export interface UseDataTableArgs<T> {
     upsertGqlConfig?: HasuraDataConfig;
     upsertFlexFormProps?: Partial<IFlexFormProps>;
   };
+  /**
+   * Override the key used to identify the item in the confirmation dialog
+   */
+  deleteMessageKey?: string;
+  /**
+   * Generated custom confirmation message using item information
+   */
+  deleteMessageGenerator?: (row?: any) => string;
   /** Overrides the primary key field name. (default name: id) Only useful if setIdInQueryOnClick is true.*/
   primaryKeyName?: string;
   queryArgsAtom?: PrimitiveAtom<UseDataTableQueryArgsAtom>;
@@ -78,7 +97,7 @@ const backupAtom = atom({});
 const defaultPageSize = 20;
 
 export default function useDataTable<T = Record<string, any>>(
-  args: UseDataTableArgs<T>,
+  args: UseDataTableArgs<T>
 ): {
   dataTableProps: Record<string, any>;
   columns: ColumnFromConfig[];
@@ -93,7 +112,7 @@ export default function useDataTable<T = Record<string, any>>(
   setSelectedRow: (row?: any) => void;
   hideUpsertDialog: () => void;
   hideDeleteDialog: () => void;
-} {  
+} {
   const { gqlConfig, queryManyState } = args;
   const needsActionColumn = args.update || args.delete;
   const [selectedRow, setSelectedRow] = useState<T | undefined | null>();
@@ -123,7 +142,11 @@ export default function useDataTable<T = Record<string, any>>(
         ...baseProps,
         selectionMode: 'single',
         selection: selectedRow,
-        onSelectionChange: (e) => updateSelectRowInQuery(e.value[gqlConfig.primaryKey[0]], args.onRowClick),
+        onSelectionChange: (e) =>
+          updateSelectRowInQuery(
+            e.value[gqlConfig.primaryKey[0]],
+            args.onRowClick
+          ),
         dataKey: gqlConfig.primaryKey[0],
       };
     }
@@ -260,7 +283,9 @@ export default function useDataTable<T = Record<string, any>>(
     if (!args.delete || !selectedRow) {
       return null;
     }
-    const pkName = gqlConfig.primaryKey[0];
+
+    // use primaryKeyName if provided. Use the key from the config by default
+    const pkName = args.primaryKeyName ?? gqlConfig.primaryKey[0];
 
     //Doing this weird row copy thing because otherwise TS things selectedRow is of type unknown
     const rowTyped: Record<string, any> = selectedRow;
@@ -303,14 +328,29 @@ export default function useDataTable<T = Record<string, any>>(
         }}
       >
         <div className="confirmation-content">
-          <i className="pi pi-exclamation-triangle p-mr-3" style={{ fontSize: '2rem' }} />
+          <i
+            className="pi pi-exclamation-triangle p-mr-3"
+            style={{ fontSize: '2rem' }}
+          />
           <span>
-            Are you sure you want to delete <b>{selectRowPk}</b>?
+            Are you sure you want to delete{' '}
+            <b>
+              {args.deleteMessageGenerator
+                ? args.deleteMessageGenerator(selectedRow)
+                : selectRowPk}
+            </b>
+            ?
           </span>
         </div>
       </Dialog>
     );
-  }, [args.delete, showDeleteDialog, selectedRow]);
+  }, [
+    args.delete,
+    args.deleteMessageKey,
+    args.deleteMessageGenerator,
+    showDeleteDialog,
+    selectedRow,
+  ]);
 
   ///Order by
   return {
@@ -343,13 +383,30 @@ type UpsertComponentProps = {
   flexFormProps?: Partial<IFlexFormProps>;
 };
 
-function UpsertComponent({ gqlConfig, row, onSuccess, flexFormProps }: UpsertComponentProps) {
+function UpsertComponent({
+  gqlConfig,
+  row,
+  onSuccess,
+  flexFormProps,
+}: UpsertComponentProps) {
   const api = useReactGraphql(gqlConfig);
 
-  return <FlexForm config={gqlConfig} api={api} isNew={!!row} onSuccess={onSuccess} {...flexFormProps} />;
+  return (
+    <FlexForm
+      config={gqlConfig}
+      api={api}
+      isNew={!!row}
+      onSuccess={onSuccess}
+      {...flexFormProps}
+    />
+  );
 }
 
-function updateSelectRowInQuery(primaryKeyValue: string, onRowClick?: (path: string) => void, primaryKeyName = 'id') {
+function updateSelectRowInQuery(
+  primaryKeyValue: string,
+  onRowClick?: (path: string) => void,
+  primaryKeyName = 'id'
+) {
   const currentParams = queryString.parse(window.location.search);
   let nextParams: { [key: string]: any } = {};
   nextParams = { ...currentParams, [primaryKeyName]: primaryKeyValue };
