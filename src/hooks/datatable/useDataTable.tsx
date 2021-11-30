@@ -64,6 +64,14 @@ export interface UseDataTableArgs<T> {
     upsertGqlConfig?: HasuraDataConfig;
     upsertFlexFormProps?: Partial<IFlexFormProps>;
   };
+  /**
+   * Override the key used to identify the item in the confirmation dialog
+   */
+  deleteMessageKey?: string
+  /**
+   * Generated custom confirmation message using item information
+   */
+  deleteMessageGenerator?: (row?: any) => string
   /** Overrides the primary key field name. (default name: id) Only useful if setIdInQueryOnClick is true.*/
   primaryKeyName?: string;
   queryArgsAtom?: PrimitiveAtom<UseDataTableQueryArgsAtom>;
@@ -260,7 +268,9 @@ export default function useDataTable<T = Record<string, any>>(
     if (!args.delete || !selectedRow) {
       return null;
     }
-    const pkName = gqlConfig.primaryKey[0];
+
+    // use primaryKeyName if provided. Use the key from the config by default
+    const pkName = args.primaryKeyName ?? gqlConfig.primaryKey[0];
 
     //Doing this weird row copy thing because otherwise TS things selectedRow is of type unknown
     const rowTyped: Record<string, any> = selectedRow;
@@ -305,12 +315,20 @@ export default function useDataTable<T = Record<string, any>>(
         <div className="confirmation-content">
           <i className="pi pi-exclamation-triangle p-mr-3" style={{ fontSize: '2rem' }} />
           <span>
-            Are you sure you want to delete <b>{selectRowPk}</b>?
+          Are you sure you want to delete{' '}
+            <b>
+              {
+                args.deleteMessageGenerator
+                  ? args.deleteMessageGenerator(selectedRow)
+                  : selectRowPk
+              }
+            </b>
+            ?
           </span>
         </div>
       </Dialog>
     );
-  }, [args.delete, showDeleteDialog, selectedRow]);
+  }, [args.delete, args.deleteMessageKey, args.deleteMessageGenerator, showDeleteDialog, selectedRow]);
 
   ///Order by
   return {
