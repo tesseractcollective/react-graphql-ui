@@ -1,6 +1,6 @@
 {
   "name": "@tesseractcollective/react-graphql-ui",
-  "version": "rc0.3.0",
+  "version": "0.3.0rc",
   "description": "",
   "main": "dist/react-graphql-ui.es.js",
   "scripts": {
