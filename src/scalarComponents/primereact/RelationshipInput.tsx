@@ -51,7 +51,28 @@ const RelationshipInput: FunctionComponent<IRelationshipInputProps> = function R
     );
   }, []);
 
-  if (!relationshipConfig) {
+  if(fieldInfo.enumValues && !relationshipConfig){
+    return (
+      <SelectViaRelationship
+        configForRelationship={{
+          typename: fieldInfo.relationship.table,
+          primaryKey: [fieldInfo.relationship.field],
+          fieldFragment: {
+            kind: 'Document',
+            definitions: []
+          }
+        }}
+        fieldInfo={fieldInfo}
+        control={control}
+        name={fieldInfo.name}
+        relationshipColumnNameForLabel={labelColumn || fieldInfo.relationship.field}
+        relationshipColumnNameForValue={fieldInfo.relationship.field}
+        dropdownProps={passthroughProps as any}
+      />
+    );
+  }
+
+  if (!relationshipConfig && (!fieldInfo.enumValues)) {
     return null;
   }
 
@@ -60,6 +81,7 @@ const RelationshipInput: FunctionComponent<IRelationshipInputProps> = function R
       configForRelationship={relationshipConfig}
       control={control}
       name={fieldInfo.name}
+      fieldInfo={fieldInfo}
       relationshipColumnNameForLabel={labelColumn || relationshipConfig.primaryKey[0]}
       relationshipColumnNameForValue={relationshipConfig.primaryKey[0]}
       where={relationshipConfig?.relationshipMeta?.defaultWhere}

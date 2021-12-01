@@ -161,7 +161,7 @@ export default function useDataTable<T = Record<string, any>>(
   });
 
   //INSERT Logic
-  const [showUpsertDialog, setShowUpsertDialog] = useState(false);
+  const [showUpsertDialog, setShowUpsertDialog] = useState<null | 'insert' | 'update'>(null);
 
   const insertButton = useMemo(() => {
     if (!args.insert) {
@@ -172,7 +172,7 @@ export default function useDataTable<T = Record<string, any>>(
         label="New"
         icon="pi pi-plus"
         className="p-button-success p-mr-2"
-        onClick={() => setShowUpsertDialog(true)}
+        onClick={() => setShowUpsertDialog('insert')}
       />
     );
   }, [args.insert]);
@@ -192,7 +192,7 @@ export default function useDataTable<T = Record<string, any>>(
   //actionColumn
   const onEdit = (rowData: any) => {
     setSelectedRow(rowData);
-    setShowUpsertDialog(true);
+    setShowUpsertDialog('update');
   };
   const onDelete = (rowData: any) => {
     setSelectedRow(rowData);
@@ -256,21 +256,24 @@ export default function useDataTable<T = Record<string, any>>(
     return (
       <Dialog
         key="upsertDialog"
-        visible={showUpsertDialog}
+        visible={!!showUpsertDialog}
         style={{ width: '80%' }}
         header={selectedRow ? 'Edit' : 'New'}
         modal
         className="p-fluid"
         onHide={() => {
           setSelectedRow(undefined);
-          setShowUpsertDialog(false);
+          setShowUpsertDialog(null);
         }}
       >
         <UpsertComponent
           gqlConfig={args.upsert?.upsertGqlConfig ?? args.gqlConfig}
           row={selectedRow}
-          onSuccess={() => setShowUpsertDialog(false)}
-          flexFormProps={args.upsert?.upsertFlexFormProps}
+          onSuccess={() => setShowUpsertDialog(null)}
+          flexFormProps={{
+            ...args.upsert?.upsertFlexFormProps,
+            isNew: showUpsertDialog === 'insert'
+          }}
         />
       </Dialog>
     );
@@ -367,7 +370,7 @@ export default function useDataTable<T = Record<string, any>>(
     setSelectedRow,
     hideUpsertDialog: () => {
       setSelectedRow(undefined);
-      setShowUpsertDialog(false);
+      setShowUpsertDialog(null);
     },
     hideDeleteDialog: () => {
       setSelectedRow(undefined);

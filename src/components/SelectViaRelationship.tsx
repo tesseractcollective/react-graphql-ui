@@ -67,9 +67,11 @@ const SelectViaRelationship: FunctionComponent<SelectViaRelationshipProps> =
     const [query, setQuery] = useState<string>('')
 
     useEffect(() => {
-      let wc = {
-        ...where,
-      }
+      let wc = where
+        ? {
+            ...where,
+          }
+        : {}
       if (!!query) {
         wc[relationshipColumnNameForLabel] = { _ilike: `%${query}%` }
       }
@@ -77,12 +79,14 @@ const SelectViaRelationship: FunctionComponent<SelectViaRelationshipProps> =
     }, [query, where])
 
     const dataApi = useReactGraphql(configForRelationship)
-    const queryState = dataApi.useInfiniteQueryMany({
-      pageSize: 1000,
-      where: whereClause,
-      pause: fieldInfo?.enumValues ? true : false,
-      ...rest,
-    })
+    const queryState = fieldInfo?.enumValues
+      ? { fetching: false, items: [] }
+      : dataApi.useInfiniteQueryMany({
+          pageSize: 1000,
+          where: whereClause,
+          pause: fieldInfo?.enumValues ? true : false,
+          ...rest,
+        })
 
     const options = useMemo(() => {
       if (queryState.items.length) {
