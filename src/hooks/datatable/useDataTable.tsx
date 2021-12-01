@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import {
   HasuraDataConfig,
   IUseInfiniteQueryMany,
@@ -86,6 +87,7 @@ export interface UseDataTableArgs<T> {
   /** Overrides the primary key field name. (default name: id) Only useful if setIdInQueryOnClick is true.*/
   primaryKeyName?: string;
   queryArgsAtom?: PrimitiveAtom<UseDataTableQueryArgsAtom>;
+  queryArgs?: Partial<IUseInfiniteQueryMany>;
   sortable?: boolean;
   filterable?: boolean;
   columnProps?: Record<string, ColumnPropsForEquality | ColumnPropsForString>;
@@ -123,7 +125,8 @@ export default function useDataTable<T = Record<string, any>>(
   dialogs: ReactNode[];
   selectedRow: any;
   setSelectedRow: (row?: any) => void;
-  queryArgs: UseDataTableQueryArgsAtom;
+  queryArgsAtom: PrimitiveAtom<UseDataTableQueryArgsAtom>;
+  queryArgs?: Partial<IUseInfiniteQueryMany>;
   hideUpsertDialog: () => void;
   hideDeleteDialog: () => void;
 } {
@@ -138,11 +141,19 @@ export default function useDataTable<T = Record<string, any>>(
   const [queryArgsAtom] = useState(
     () =>
       _queryArgsAtom ||
-      atom<UseDataTableQueryArgsAtom>({
-        pause: true,
-      })
+      atom<UseDataTableQueryArgsAtom>(
+        args.queryArgs || {
+          pause: true,
+        }
+      )
   );
-  const [queryArgs] = useAtom(queryArgsAtom);
+  const [queryArgs, setQueryArgs] = useAtom(queryArgsAtom);
+
+  useEffect(() => {
+    if (args.queryArgs) {
+      setQueryArgs(args.queryArgs);
+    }
+  }, [args.queryArgs]);
 
   const pageSize = args.pageSize || defaultPageSize;
 
@@ -450,6 +461,7 @@ export default function useDataTable<T = Record<string, any>>(
     dialogs: [upsertDialog, deleteDialog],
     selectedRow,
     setSelectedRow,
+    queryArgsAtom,
     queryArgs,
     hideUpsertDialog: () => {
       setSelectedRow(undefined);
