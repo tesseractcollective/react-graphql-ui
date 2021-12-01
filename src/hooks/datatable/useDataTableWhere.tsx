@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useCallback} from 'react'
 import { ReactGraphqlUIContext } from '../../context/ReactGraphqlUIContext'
 import { HasuraDataConfig } from '@tesseractcollective/react-graphql'
 import { PrimitiveAtom, useAtom } from 'jotai'
 import { DataTableFilterMatchModeType, DataTableFilterParams } from 'primereact/datatable'
 import { useContext, useMemo, useState } from 'react'
 import { UseDataTableArgs, UseDataTableQueryArgsAtom } from './useDataTable'
+import useDebounce from '../useDebounce';
 
 const reactPrimeFilterMatchModeToHasuraStringOpration: Record<
   DataTableFilterMatchModeType,
@@ -104,18 +105,29 @@ export default function useDataTableWhere<T>(args: {
     )
   }, [args.dataTableArgs?.toolbar?.left, args.dataTableArgs?.toolbar?.right])
 
-  useEffect(() => {
-    if (args.dataTableArgs?.toolbar?.whereBuilder) {
-      const _where = args.dataTableArgs?.toolbar?.whereBuilder(searchText)
-      setWhere(_where)
+  const callback = useCallback(() => {
+    if (searchText) {
+      if (args.dataTableArgs?.toolbar?.whereBuilder) {
+        const _where = args.dataTableArgs?.toolbar?.whereBuilder(searchText)
+        setWhere(_where)
+      } else {
+        console.error(
+          'useDataTable:useDataTableWhere:' +
+            args.gqlConfig?.typename +
+            ': To use the SeachInput in the toolbar or standalone, you must include the toolbar.whereBuilder arg in your useDataTable options.'
+        )
+      }
     } else {
-      console.error(
-        'useDataTable:useDataTableWhere:' +
-          args.gqlConfig?.typename +
-          ': To use the SeachInput in the toolbar or standalone, you must include the toolbar.whereBuilder arg in your useDataTable options.'
-      )
+      setWhere({});
     }
-  }, [searchText])
+  }, [searchText]);
+
+  const resetDebounce = useDebounce(callback, args.dataTableArgs?.toolbar?.debounceMS || 300);
+
+  useEffect(() => {
+    resetDebounce();
+  }, [searchText]);
+
 
   useEffect(() => {
     setQueryArgs({

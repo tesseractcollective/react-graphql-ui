@@ -91,11 +91,12 @@ export interface UseDataTableArgs<T> {
   sortable?: boolean;
   filterable?: boolean;
   columnProps?: Record<string, ColumnPropsForEquality | ColumnPropsForString>;
-  onRowClick?: (path: string) => void;
+  onRowClick?: (row: any, path: string) => void;
   toolbar?: {
     left?: 'searchInput' | 'insertButton' | JSX.Element;
     right?: 'searchInput' | 'insertButton' | JSX.Element;
     whereBuilder?: (searchText: string | undefined) => Record<string, any>;
+    debounceMS?: number
   };
 }
 
@@ -188,8 +189,10 @@ export default function useDataTable<T = Record<string, any>>(
         selection: selectedRow,
         onSelectionChange: (e) =>
           updateSelectRowInQuery(
+            e.value,
             e.value[gqlConfig.primaryKey[0]],
-            args.onRowClick
+            args.onRowClick,
+            gqlConfig.primaryKey
           ),
         dataKey: gqlConfig.primaryKey[0],
       };
@@ -501,15 +504,16 @@ function UpsertComponent({
 }
 
 function updateSelectRowInQuery(
+  row: any,
   primaryKeyValue: string,
-  onRowClick?: (path: string) => void,
-  primaryKeyName = 'id'
+  onRowClick?: (row: any, path: string) => void,
+  primaryKeyName = ['id']
 ) {
   const currentParams = queryString.parse(window.location.search);
   let nextParams: { [key: string]: any } = {};
-  nextParams = { ...currentParams, [primaryKeyName]: primaryKeyValue };
+  nextParams = { ...currentParams, [primaryKeyName[0]]: primaryKeyValue };
   const queryStr = queryString.stringify(nextParams);
   if (onRowClick) {
-    onRowClick(window.location.pathname + '?' + queryStr);
+    onRowClick(row, window.location.pathname + '?' + queryStr);
   }
 }

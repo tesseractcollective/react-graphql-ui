@@ -8,7 +8,11 @@ export { default as useDataTableOrderBy } from './hooks/datatable/useDataTableOr
 export { default as useDataTablePagination } from './hooks/datatable/useDataTablePagination';
 export { default as useDataTableWhere } from './hooks/datatable/useDataTableWhere';
 export * as PrimeReactDefaultComponents from './scalarComponents/primereact';
-export type { FlexFormFieldOutputType, ScalarComponentPropsBase, FlexFormComponent } from './types/generic';
+export type {
+  FlexFormFieldOutputType,
+  ScalarComponentPropsBase,
+  FlexFormComponent,
+} from './types/generic';
 export type {
   UseDataTableQueryArgsAtom,
   ColumnFilterMatchModeTypeForEquality,
@@ -17,3 +21,5 @@ export type {
   ColumnPropsForString,
   UseDataTableArgs,
 } from './hooks/datatable/useDataTable';
+
+export { default as useDebouce } from './hooks/useDebounce';
