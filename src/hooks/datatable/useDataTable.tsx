@@ -9,7 +9,12 @@ import {
 import { atom, PrimitiveAtom, useAtom } from 'jotai';
 import { Button } from 'primereact/button';
 import { Column, ColumnProps } from 'primereact/column';
-import { DataTableProps, DataTableFilterParams } from 'primereact/datatable';
+import {
+  DataTableProps,
+  DataTableFilterParams,
+  DataTableSelectionModeType,
+  DataTableSelectionChangeParams,
+} from 'primereact/datatable';
 import { Dialog } from 'primereact/dialog';
 import { Toolbar } from 'primereact/toolbar';
 import queryString from 'query-string';
@@ -65,6 +70,10 @@ export interface ColumnPropsForString extends ColumnProps {
   filterMatchMode?: ColumnFilterMatchModeTypeForString;
 }
 
+export interface ToolbarOptions {
+  setSearchText: (text: string) => void;
+}
+
 export interface UseDataTableArgs<T> {
   gqlConfig: HasuraDataConfig;
   queryManyState?: IUseInfiniteQueryManyResults<T>;
@@ -89,15 +98,27 @@ export interface UseDataTableArgs<T> {
   queryArgsAtom?: PrimitiveAtom<UseDataTableQueryArgsAtom>;
   queryArgs?: Partial<IUseInfiniteQueryMany>;
   sortable?: boolean;
+  sortDefaultSort?: any;
   filterable?: boolean;
   columnProps?: Record<string, ColumnPropsForEquality | ColumnPropsForString>;
   onRowClick?: (row: any, path: string) => void;
   toolbar?: {
-    left?: 'searchInput' | 'insertButton' | JSX.Element;
-    right?: 'searchInput' | 'insertButton' | JSX.Element;
+    left?:
+      | 'searchInput'
+      | 'insertButton'
+      | ((toolbarOptions: ToolbarOptions) => JSX.Element);
+    right?:
+      | 'searchInput'
+      | 'insertButton'
+      | ((toolbarOptions: ToolbarOptions) => JSX.Element);
     whereBuilder?: (searchText: string | undefined) => Record<string, any>;
-    debounceMS?: number
+    debounceMS?: number;
+    searchPlaceholder?: string;
   };
+}
+
+export interface DataTableSpreadableProps extends Partial<DataTableProps> {
+  value: any[];
 }
 
 const backupAtom = atom({});
@@ -107,7 +128,7 @@ const defaultPageSize = 20;
 export default function useDataTable<T = Record<string, any>>(
   args: UseDataTableArgs<T>
 ): {
-  dataTableProps: Record<string, any>;
+  dataTableProps: DataTableSpreadableProps;
   columns: ColumnFromConfig[];
   paginationProps: DataTablePaginationProps<T>;
   orderByProps: UseDataTableOrderby;
@@ -178,8 +199,8 @@ export default function useDataTable<T = Record<string, any>>(
     dataTableArgs: args,
   });
 
-  const tableProps = useMemo<Partial<DataTableProps>>(() => {
-    let baseProps: Partial<DataTableProps> = {
+  const tableProps = useMemo<DataTableSpreadableProps>(() => {
+    let baseProps: DataTableSpreadableProps = {
       value: paginationProps.currentRows,
     };
     if (args.onRowClick) {
@@ -267,6 +288,13 @@ export default function useDataTable<T = Record<string, any>>(
     }
     if (args.toolbar?.right === 'searchInput') {
       right = filterProps.searchInput;
+    }
+
+    if (typeof args.toolbar?.left === 'function') {
+      left = args.toolbar.left({ setSearchText: filterProps.setSearchText });
+    }
+    if (typeof args.toolbar?.right === 'function') {
+      right = args.toolbar.right({ setSearchText: filterProps.setSearchText });
     }
 
     return <Toolbar className="p-mb-4" right={right} left={left}></Toolbar>;

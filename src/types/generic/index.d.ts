@@ -2,11 +2,11 @@ import { HasuraDataConfig, IFieldOutputType } from '@tesseractcollective/react-g
 import React, { ReactElement, FunctionComponent } from 'react';
 import { RegisterOptions } from 'react-hook-form';
 
-interface FlexFormFieldOutputType extends IFieldOutputType {
+export interface FlexFormFieldOutputType extends IFieldOutputType {
   label?: string
 }
 
-interface ScalarComponentPropsBase {
+export interface ScalarComponentPropsBase {
   fieldInfo: FlexFormFieldOutputType
   control: any;
   configs?: {
@@ -16,4 +16,4 @@ interface ScalarComponentPropsBase {
   disabled?: boolean
 }
 
-type FlexFormComponent = FunctionComponent<ScalarComponentPropsBase>
+export type FlexFormComponent = FunctionComponent<ScalarComponentPropsBase>

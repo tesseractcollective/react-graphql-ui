@@ -88,7 +88,13 @@ export default function useDataTableWhere<T>(args: {
 
     const SearchInputComponent = rgUIContext.defaultComponents?.['SearchInput'] || InputText;
 
-    return <SearchInputComponent value={searchText} onChange={(e: any) => setSearchText(e.target.value)} />;
+    return (
+      <SearchInputComponent
+        value={searchText}
+        onChange={(e: any) => setSearchText(e.target.value)}
+        placeholder={args.dataTableArgs?.toolbar?.searchPlaceholder || 'Search'}
+      />
+    );
   }, [args.dataTableArgs?.toolbar?.left, args.dataTableArgs?.toolbar?.right]);
 
   const callback = useCallback(() => {

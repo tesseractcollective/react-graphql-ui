@@ -8,6 +8,7 @@ export interface IReactGraphqlUIContext {
     SearchInput?: React.ReactElement<{
       value?: string;
       onChange: (e: React.KeyboardEvent) => void;
+      placeholder?: string
     }>;
   };
   configsMap: HasuraConfigType;
