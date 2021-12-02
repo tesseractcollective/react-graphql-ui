@@ -497,6 +497,7 @@ function UpsertComponent({
       config={gqlConfig}
       api={api}
       isNew={!!row}
+      data={row}
       onSuccess={onSuccess}
       {...flexFormProps}
     />
