@@ -1,5 +1,5 @@
 import { HasuraDataConfig, IFieldOutputType } from '@tesseractcollective/react-graphql';
-import { ReactElement } from 'react';
+import React, { ReactElement, FunctionComponent } from 'react';
 import { RegisterOptions } from 'react-hook-form';
 
 interface FlexFormFieldOutputType extends IFieldOutputType {
@@ -13,6 +13,7 @@ interface ScalarComponentPropsBase {
     [typename: string]: HasuraDataConfig
   }
   rules?: Omit<RegisterOptions, 'valueAsNumber' | 'valueAsDate' | 'setValueAs' | 'disabled'>
+  disabled?: boolean
 }
 
-type FlexFormComponent = (props: ScalarComponentPropsBase) => ReactElement;
+type FlexFormComponent = FunctionComponent<ScalarComponentPropsBase>

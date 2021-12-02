@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import {
   HasuraDataConfig,
   IUseInfiniteQueryMany,
@@ -5,10 +6,10 @@ import {
   MutateState,
   useReactGraphql,
 } from '@tesseractcollective/react-graphql';
-import { atom, PrimitiveAtom } from 'jotai';
+import { atom, PrimitiveAtom, useAtom } from 'jotai';
 import { Button } from 'primereact/button';
 import { Column, ColumnProps } from 'primereact/column';
-import { DataTableProps } from 'primereact/datatable';
+import { DataTableProps, DataTableFilterParams } from 'primereact/datatable';
 import { Dialog } from 'primereact/dialog';
 import { Toolbar } from 'primereact/toolbar';
 import queryString from 'query-string';
@@ -86,10 +87,17 @@ export interface UseDataTableArgs<T> {
   /** Overrides the primary key field name. (default name: id) Only useful if setIdInQueryOnClick is true.*/
   primaryKeyName?: string;
   queryArgsAtom?: PrimitiveAtom<UseDataTableQueryArgsAtom>;
+  queryArgs?: Partial<IUseInfiniteQueryMany>;
   sortable?: boolean;
   filterable?: boolean;
   columnProps?: Record<string, ColumnPropsForEquality | ColumnPropsForString>;
-  onRowClick?: (path: string) => void;
+  onRowClick?: (row: any, path: string) => void;
+  toolbar?: {
+    left?: 'searchInput' | 'insertButton' | JSX.Element;
+    right?: 'searchInput' | 'insertButton' | JSX.Element;
+    whereBuilder?: (searchText: string | undefined) => Record<string, any>;
+    debounceMS?: number
+  };
 }
 
 const backupAtom = atom({});
@@ -103,34 +111,71 @@ export default function useDataTable<T = Record<string, any>>(
   columns: ColumnFromConfig[];
   paginationProps: DataTablePaginationProps<T>;
   orderByProps: UseDataTableOrderby;
-  filterProps: UseDataTableWhere;
+  filterProps: {
+    onFilter: (event: DataTableFilterParams) => void;
+    filters: any;
+  };
+  search: {
+    searchInput: JSX.Element | null;
+    searchText: string | undefined;
+    setSearchText: React.Dispatch<React.SetStateAction<string | undefined>>;
+  };
   toolbar: ReactNode;
   insertButton: ReactNode;
   actionColumn: ReactNode;
   dialogs: ReactNode[];
   selectedRow: any;
   setSelectedRow: (row?: any) => void;
+  queryArgsAtom: PrimitiveAtom<UseDataTableQueryArgsAtom>;
+  queryArgs?: Partial<IUseInfiniteQueryMany>;
   hideUpsertDialog: () => void;
   hideDeleteDialog: () => void;
 } {
-  const { gqlConfig, queryManyState } = args;
+  const {
+    gqlConfig,
+    queryManyState: _queryManyState,
+    queryArgsAtom: _queryArgsAtom,
+  } = args;
   const needsActionColumn = args.update || args.delete;
   const [selectedRow, setSelectedRow] = useState<T | undefined | null>();
+  const [isQueryStateProvided] = useState<boolean>(() => !!_queryManyState);
+  const [queryArgsAtom] = useState(
+    () =>
+      _queryArgsAtom ||
+      atom<UseDataTableQueryArgsAtom>(
+        args.queryArgs || {
+          pause: true,
+        }
+      )
+  );
+  const [queryArgs, setQueryArgs] = useAtom(queryArgsAtom);
+
+  useEffect(() => {
+    if (args.queryArgs) {
+      setQueryArgs(args.queryArgs);
+    }
+  }, [args.queryArgs]);
 
   const pageSize = args.pageSize || defaultPageSize;
+
+  const queryManyState = isQueryStateProvided
+    ? args.queryManyState
+    : useReactGraphql(gqlConfig).useInfiniteQueryMany<T>(queryArgs);
 
   const paginationProps = useDataTablePagination({
     queryManyState: queryManyState,
     pageSize: pageSize,
-    queryArgsAtom: args.queryArgsAtom || backupAtom,
+    queryArgsAtom: queryArgsAtom || backupAtom,
   });
 
   const orderByProps = useDataTableOrderBy({
-    queryArgsAtom: args.queryArgsAtom || backupAtom,
+    queryArgsAtom: queryArgsAtom || backupAtom,
   });
+
   const filterProps = useDataTableWhere({
     gqlConfig,
-    queryArgsAtom: args.queryArgsAtom || backupAtom,
+    queryArgsAtom: queryArgsAtom || backupAtom,
+    dataTableArgs: args,
   });
 
   const tableProps = useMemo<Partial<DataTableProps>>(() => {
@@ -144,8 +189,10 @@ export default function useDataTable<T = Record<string, any>>(
         selection: selectedRow,
         onSelectionChange: (e) =>
           updateSelectRowInQuery(
+            e.value,
             e.value[gqlConfig.primaryKey[0]],
-            args.onRowClick
+            args.onRowClick,
+            gqlConfig.primaryKey
           ),
         dataKey: gqlConfig.primaryKey[0],
       };
@@ -161,10 +208,18 @@ export default function useDataTable<T = Record<string, any>>(
   });
 
   //INSERT Logic
-  const [showUpsertDialog, setShowUpsertDialog] = useState<null | 'insert' | 'update'>(null);
+  const [showUpsertDialog, setShowUpsertDialog] = useState<
+    null | 'insert' | 'update'
+  >(null);
+
+  const isNotManualInsert = args.insert && args.insert !== 'manual';
+  const needsInsertButton =
+    isNotManualInsert ||
+    args.toolbar?.left === 'insertButton' ||
+    args.toolbar?.right === 'insertButton';
 
   const insertButton = useMemo(() => {
-    if (!args.insert) {
+    if (!needsInsertButton) {
       return;
     }
     return (
@@ -175,19 +230,52 @@ export default function useDataTable<T = Record<string, any>>(
         onClick={() => setShowUpsertDialog('insert')}
       />
     );
-  }, [args.insert]);
+  }, [needsInsertButton]);
 
   const toolbarComponent = useMemo(() => {
-    if (!args.insert || args.insert === 'manual') {
+    let left;
+    let right;
+
+    const needsToolbar = isNotManualInsert || args.toolbar;
+
+    if (!needsToolbar) {
       return null;
     }
-    if (args.insert === 'toolBarLeft') {
-      return <Toolbar className="p-mb-4" left={insertButton}></Toolbar>;
+
+    if (isNotManualInsert && args.toolbar) {
+      console.warn(
+        'useDataTable: ',
+        args.gqlConfig.typename,
+        ': Do not pass in an insert prop with toolBarLeft/toolBarRight and a toolbar prop.  Use one or the other.  We will use toolbar and ignore insert'
+      );
     }
-    if (args.insert === 'toolBarRight') {
-      return <Toolbar className="p-mb-4" right={insertButton}></Toolbar>;
+
+    if (
+      args.insert === 'toolBarLeft' ||
+      args.toolbar?.left === 'insertButton'
+    ) {
+      left = insertButton;
     }
-  }, []);
+    if (
+      args.insert === 'toolBarRight' ||
+      args.toolbar?.right === 'insertButton'
+    ) {
+      right = insertButton;
+    }
+    if (args.toolbar?.left === 'searchInput') {
+      left = filterProps.searchInput;
+    }
+    if (args.toolbar?.right === 'searchInput') {
+      right = filterProps.searchInput;
+    }
+
+    return <Toolbar className="p-mb-4" right={right} left={left}></Toolbar>;
+  }, [
+    needsInsertButton,
+    args.toolbar?.left,
+    args.toolbar?.right,
+    filterProps.searchInput,
+  ]);
 
   //actionColumn
   const onEdit = (rowData: any) => {
@@ -249,7 +337,7 @@ export default function useDataTable<T = Record<string, any>>(
   //upsertDialog
   const upsertDialog = useMemo(() => {
     // Only include upsert dialog when updating or inserting is enabled
-    if (!args?.update && !args?.insert) {
+    if (!args?.update && !needsInsertButton) {
       return null;
     }
 
@@ -272,7 +360,7 @@ export default function useDataTable<T = Record<string, any>>(
           onSuccess={() => setShowUpsertDialog(null)}
           flexFormProps={{
             ...args.upsert?.upsertFlexFormProps,
-            isNew: showUpsertDialog === 'insert'
+            isNew: showUpsertDialog === 'insert',
           }}
         />
       </Dialog>
@@ -361,13 +449,23 @@ export default function useDataTable<T = Record<string, any>>(
     columns,
     paginationProps,
     orderByProps,
-    filterProps,
+    filterProps: {
+      onFilter: filterProps.onFilter,
+      filters: filterProps.filters,
+    },
+    search: {
+      searchInput: filterProps.searchInput,
+      searchText: filterProps.searchText,
+      setSearchText: filterProps.setSearchText,
+    },
     toolbar: toolbarComponent,
     insertButton: insertButton,
     actionColumn: actionColumnComponent,
     dialogs: [upsertDialog, deleteDialog],
     selectedRow,
     setSelectedRow,
+    queryArgsAtom,
+    queryArgs,
     hideUpsertDialog: () => {
       setSelectedRow(undefined);
       setShowUpsertDialog(null);
@@ -399,6 +497,7 @@ function UpsertComponent({
       config={gqlConfig}
       api={api}
       isNew={!!row}
+      data={row}
       onSuccess={onSuccess}
       {...flexFormProps}
     />
@@ -406,15 +505,16 @@ function UpsertComponent({
 }
 
 function updateSelectRowInQuery(
+  row: any,
   primaryKeyValue: string,
-  onRowClick?: (path: string) => void,
-  primaryKeyName = 'id'
+  onRowClick?: (row: any, path: string) => void,
+  primaryKeyName = ['id']
 ) {
   const currentParams = queryString.parse(window.location.search);
   let nextParams: { [key: string]: any } = {};
-  nextParams = { ...currentParams, [primaryKeyName]: primaryKeyValue };
+  nextParams = { ...currentParams, [primaryKeyName[0]]: primaryKeyValue };
   const queryStr = queryString.stringify(nextParams);
   if (onRowClick) {
-    onRowClick(window.location.pathname + '?' + queryStr);
+    onRowClick(row, window.location.pathname + '?' + queryStr);
   }
 }

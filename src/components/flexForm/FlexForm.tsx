@@ -1,4 +1,4 @@
-import { HasuraDataConfig, useReactGraphql, UseReactGraphqlApi } from '@tesseractcollective/react-graphql';
+import { HasuraDataConfig, UseQueryOneProps, useReactGraphql, UseReactGraphqlApi } from '@tesseractcollective/react-graphql';
 import Case from 'case';
 import _ from 'lodash';
 import { Button } from 'primereact/button';
@@ -59,6 +59,7 @@ export interface IFlexFormProps {
   onDataChange?: (data: any) => void;
   labels?: Record<string, string>;
   disableAllFields?: boolean;
+  existingRecordQueryArgs?: UseQueryOneProps;
 }
 
 function FlexForm(props: IFlexFormProps) {
@@ -68,28 +69,41 @@ function FlexForm(props: IFlexFormProps) {
     fields: _fields,
     api: externalApi,
     configs,
-    data: _data,
+    data: passedInData,
     insertConfig,
     updateConfig,
     onDataChange,
     disableAllFields,
     props: passthroughProps,
+    existingRecordQueryArgs: _existingRecordQueryArgs,
   } = props;
-
   const [gqlError, setGqlError] = useState<string | null>(null);
+
+  const isNew = props.isNew ? (typeof props.isNew === 'function' ? props.isNew(props.data) : props.isNew) : false;
+
+  const [queryVariables] = useState(() => _existingRecordQueryArgs);
+
+  const existingRecordQueryState = queryVariables ? useReactGraphql(config).useQueryOne({
+    ...queryVariables,
+    variables: {
+      ...queryVariables?.variables,
+    }    
+  }) : null
 
   const data = useMemo(() => {
     // Grab a deep copy of _data. We want that to compare to the original if needed.
-    let data = _data;
-    if (!_data || Array.isArray(_data)) {
-      return _data;
-    } else {
-      data = { ..._data };
+    let data = passedInData || existingRecordQueryState?.item;
+    if (!passedInData || Array.isArray(data)) {
+      return data;
+    } else if (passedInData) {
+      data = { ...passedInData };
+    } else if (existingRecordQueryState?.item) {
+      data = { ...existingRecordQueryState?.item };
     }
 
     // PreProcess with some defaults. For instance if there's a timestamp field
     // the default preprocessing is to convert it into a Date object.
-    // If that is undesirable a user can overrid that by providing a custom preprocess function to simply return the value
+    // If that is undesirable a user can map the passedInData before sending it in
     for (const [datumName, datumValue] of Object.entries(data)) {
       const datumTypeName = config.fields?.fieldSimpleMap?.[datumName]?.typeName;
 
@@ -100,7 +114,7 @@ function FlexForm(props: IFlexFormProps) {
     }
 
     return data;
-  }, [_data]);
+  }, [passedInData, existingRecordQueryState]);
 
   useEffect(() => {
     if (onDataChange) {
@@ -116,8 +130,6 @@ function FlexForm(props: IFlexFormProps) {
     if (autoFields) return autoFields;
     return [];
   }, [_fields, config]);
-
-  const isNew = props.isNew ? (typeof props.isNew === 'function' ? props.isNew(props.data) : props.isNew) : false;
 
   const api = externalApi ?? useReactGraphql(config);
 
@@ -196,10 +208,10 @@ function FlexForm(props: IFlexFormProps) {
     mutationState.executeMutation(strippedData);
   };
 
-  const rgUIContext = useContext<any>(ReactGraphqlUIContext);
+  const rgUIContext = useContext(ReactGraphqlUIContext);
 
   const fieldsElements = useMemo(() => {
-    const RelationshipInput = props.components?.RelationshipInput || rgUIContext.defaultComponents['RelationshipInput'];
+    const RelationshipInput = props.components?.RelationshipInput || rgUIContext.defaultComponents.flexFormComponents['RelationshipInput'];
     return fields
       .filter((fieldName: string) => {
         if (fieldName === 'id') {
@@ -214,15 +226,10 @@ function FlexForm(props: IFlexFormProps) {
         return !props.hideFields.includes(fieldName);
       })
       .map((field) => {
-        const { fieldInfo, defaultComponent } = getDefaultComponentForScalar(
-          config,
-          field,
-          rgUIContext.defaultComponents,
-        );
+        const { fieldInfo, defaultComponent } = getDefaultComponentForScalar(config, field, rgUIContext.defaultComponents.flexFormComponents);
         const fieldTypePascal = Case.pascal(fieldInfo.typeName);
 
-        const Component =
-          props.components?.[fieldInfo.name] || (fieldInfo.relationship && RelationshipInput) || defaultComponent;
+        const Component = props.components?.[fieldInfo.name] || (fieldInfo.relationship && RelationshipInput) || defaultComponent;
 
         if (!Component) {
           // @ts-ignore
@@ -262,21 +269,11 @@ function FlexForm(props: IFlexFormProps) {
 
   return (
     <form onSubmit={handleSubmit(props.onSubmit ?? onSubmit)} className={`flex flex-col p-8`}>
-      <div
-        className={
-          props.grid?.styles ||
-          `grid grid-cols-${props.grid?.columnCount ?? '3'} gap-x-12 gap-y-8 justify-items-stretch mb-5`
-        }
-      >
+      <div className={props.grid?.styles || `grid grid-cols-${props.grid?.columnCount ?? '3'} gap-x-12 gap-y-8 justify-items-stretch mb-5`}>
         {...fieldsElements}
       </div>
       {gqlError && <small className="p-error p-d-block">{gqlError}</small>}
-      <Button
-        className="border self-end"
-        type="submit"
-        loading={mutationState.mutationState.fetching}
-        label="Submit"
-      ></Button>
+      <Button className="border self-end" type="submit" loading={mutationState.mutationState.fetching} label="Submit"></Button>
     </form>
   );
 }

@@ -2,7 +2,7 @@ import { PrimitiveAtom, useAtom } from 'jotai';
 import { DataTableSortModeType, DataTableSortOrderType, DataTableSortParams } from 'primereact/datatable';
 import { useState } from 'react';
 import { UseDataTableQueryArgsAtom } from './useDataTable';
-
+import _ from 'lodash'
 export interface UseDataTableOrderby {
   sortable: boolean;
   sortMode: DataTableSortModeType;
@@ -33,13 +33,11 @@ export default function useDataTableOrderBy(args: { queryArgsAtom: PrimitiveAtom
 
     const hasuraSortDirection = reactPrimeSortOrderToHasuraMap[event.sortOrder + ''];
 
+    const orderByObj = _.set({}, event.sortField, hasuraSortDirection);
+
     setQueryArgs({
       ...queryArgs,
-      orderBy: [
-        {
-          [event.sortField]: hasuraSortDirection,
-        },
-      ],
+      orderBy: [orderByObj],
     });
     setLastSortEvent(event);
   };
