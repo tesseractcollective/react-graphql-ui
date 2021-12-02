@@ -2,6 +2,7 @@ export { default as FlexForm } from './components/flexForm/FlexForm';
 export { default as FlexFormLocal } from './components/flexForm/FlexFormLocal';
 export { default as SelectViaRelationship } from './components/SelectViaRelationship';
 export { ReactGraphqlUIContext } from './context/ReactGraphqlUIContext';
+export type { IReactGraphqlUIContext } from './context/ReactGraphqlUIContext';
 export { default as useDataTable } from './hooks/datatable/useDataTable';
 export { default as useDataTableColumns } from './hooks/datatable/useDataTableColumns';
 export { default as useDataTableOrderBy } from './hooks/datatable/useDataTableOrderBy';

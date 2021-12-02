@@ -165,16 +165,16 @@ export default function useDataTable<T = Record<string, any>>(
   const paginationProps = useDataTablePagination({
     queryManyState: queryManyState,
     pageSize: pageSize,
-    queryArgsAtom: args.queryArgsAtom || backupAtom,
+    queryArgsAtom: queryArgsAtom || backupAtom,
   });
 
   const orderByProps = useDataTableOrderBy({
-    queryArgsAtom: args.queryArgsAtom || backupAtom,
+    queryArgsAtom: queryArgsAtom || backupAtom,
   });
 
   const filterProps = useDataTableWhere({
     gqlConfig,
-    queryArgsAtom: args.queryArgsAtom || backupAtom,
+    queryArgsAtom: queryArgsAtom || backupAtom,
     dataTableArgs: args,
   });
 
@@ -219,7 +219,7 @@ export default function useDataTable<T = Record<string, any>>(
     args.toolbar?.right === 'insertButton';
 
   const insertButton = useMemo(() => {
-    if (!args.insert) {
+    if (!needsInsertButton) {
       return;
     }
     return (
@@ -337,7 +337,7 @@ export default function useDataTable<T = Record<string, any>>(
   //upsertDialog
   const upsertDialog = useMemo(() => {
     // Only include upsert dialog when updating or inserting is enabled
-    if (!args?.update && !args?.insert) {
+    if (!args?.update && !needsInsertButton) {
       return null;
     }
 

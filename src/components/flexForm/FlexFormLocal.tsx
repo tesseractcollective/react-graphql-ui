@@ -47,7 +47,7 @@ export interface FlexFormLocalProps {
 }
 
 function FlexFormLocal(props: FlexFormLocalProps) {
-  const rgUIContext = useContext<any>(ReactGraphqlUIContext)
+  const rgUIContext = useContext(ReactGraphqlUIContext)
   //Spread primary key onto initial variables for update
   const {
     fields: fieldsConfig,
@@ -98,7 +98,7 @@ function FlexFormLocal(props: FlexFormLocalProps) {
   const fieldsElements = useMemo(() => {
     const RelationshipInput =
       props.components?.RelationshipInput ||
-      rgUIContext.defaultComponents['RelationshipInput']
+      rgUIContext.defaultComponents.flexFormComponents['RelationshipInput']
 
     return fieldsConfig
       .filter((fieldInfo) => {

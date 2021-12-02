@@ -10,24 +10,21 @@ interface IRelationshipFieldOutputType extends FlexFormFieldOutputType {
   relationship: { table: string; field: string };
 }
 
-export interface IRelationshipInputProps extends ScalarComponentPropsBase {
-  fieldInfo: IRelationshipFieldOutputType;
-}
-
-const RelationshipInput: FunctionComponent<IRelationshipInputProps> = function RelationshipInput({
-  fieldInfo,
+const RelationshipInput: FunctionComponent<ScalarComponentPropsBase> = function RelationshipInput({
+  fieldInfo: _fieldInfo,
   control,
   configs,
   ...passthroughProps
 }) {
   const rgUIContext = useContext(ReactGraphqlUIContext);
   const HasuraConfig = rgUIContext.configsMap;
+  const fieldInfo = { ...(_fieldInfo as IRelationshipFieldOutputType) };
 
   const relationshipConfig: HasuraDataConfig | undefined =
-      configs?.[fieldInfo.relationship.table + 'Select'] ||
-      configs?.[fieldInfo.relationship.table] ||
-      HasuraConfig[fieldInfo.relationship.table + 'Select'] ||
-      HasuraConfig[fieldInfo.relationship.table] ||
+    configs?.[fieldInfo.relationship.table + 'Select'] ||
+    configs?.[fieldInfo.relationship.table] ||
+    HasuraConfig[fieldInfo.relationship.table + 'Select'] ||
+    HasuraConfig[fieldInfo.relationship.table] ||
     _.find(HasuraConfig, (val, key) => val.typename === fieldInfo.typeName);
 
   useEffect(() => {
@@ -51,7 +48,7 @@ const RelationshipInput: FunctionComponent<IRelationshipInputProps> = function R
     );
   }, []);
 
-  if(fieldInfo.enumValues && !relationshipConfig){
+  if (fieldInfo.enumValues && !relationshipConfig) {
     return (
       <SelectViaRelationship
         configForRelationship={{
@@ -59,8 +56,8 @@ const RelationshipInput: FunctionComponent<IRelationshipInputProps> = function R
           primaryKey: [fieldInfo.relationship.field],
           fieldFragment: {
             kind: 'Document',
-            definitions: []
-          }
+            definitions: [],
+          },
         }}
         fieldInfo={fieldInfo}
         control={control}
@@ -72,7 +69,7 @@ const RelationshipInput: FunctionComponent<IRelationshipInputProps> = function R
     );
   }
 
-  if (!relationshipConfig && (!fieldInfo.enumValues)) {
+  if (!relationshipConfig && !fieldInfo.enumValues) {
     return null;
   }
 

@@ -2,10 +2,20 @@ import React from 'react';
 import { HasuraConfigType } from '@tesseractcollective/react-graphql';
 import { FlexFormComponent } from '../types/generic';
 
-export const ReactGraphqlUIContext = React.createContext<{
-  defaultComponents: Record<string, FlexFormComponent>;
+export interface IReactGraphqlUIContext {
+  defaultComponents: {
+    flexFormComponents: Record<string, FlexFormComponent>;
+    SearchInput?: React.ReactElement<{
+      value?: string;
+      onChange: (e: React.KeyboardEvent) => void;
+    }>;
+  };
   configsMap: HasuraConfigType;
-}>({
-  defaultComponents: {},
+}
+
+export const ReactGraphqlUIContext = React.createContext<IReactGraphqlUIContext>({
+  defaultComponents: {
+    flexFormComponents: {},
+  },
   configsMap: {},
 });

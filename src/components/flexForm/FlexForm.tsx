@@ -81,21 +81,14 @@ function FlexForm(props: IFlexFormProps) {
 
   const isNew = props.isNew ? (typeof props.isNew === 'function' ? props.isNew(props.data) : props.isNew) : false;
 
-  const [queryVariables, setQueryVariables] = useState(() => _existingRecordQueryArgs);
+  const [queryVariables] = useState(() => _existingRecordQueryArgs);
 
-  useEffect(() => {
-    if (_existingRecordQueryArgs !== queryVariables) {
-      setQueryVariables(_existingRecordQueryArgs);
-    }
-  }, [_existingRecordQueryArgs]);
-
-  const existingRecordQueryState = useReactGraphql(config).useQueryOne({
+  const existingRecordQueryState = queryVariables ? useReactGraphql(config).useQueryOne({
     ...queryVariables,
     variables: {
       ...queryVariables?.variables,
-    },
-    pause: !queryVariables,
-  });
+    }    
+  }) : null
 
   const data = useMemo(() => {
     // Grab a deep copy of _data. We want that to compare to the original if needed.
@@ -215,10 +208,10 @@ function FlexForm(props: IFlexFormProps) {
     mutationState.executeMutation(strippedData);
   };
 
-  const rgUIContext = useContext<any>(ReactGraphqlUIContext);
+  const rgUIContext = useContext(ReactGraphqlUIContext);
 
   const fieldsElements = useMemo(() => {
-    const RelationshipInput = props.components?.RelationshipInput || rgUIContext.defaultComponents['RelationshipInput'];
+    const RelationshipInput = props.components?.RelationshipInput || rgUIContext.defaultComponents.flexFormComponents['RelationshipInput'];
     return fields
       .filter((fieldName: string) => {
         if (fieldName === 'id') {
@@ -233,7 +226,7 @@ function FlexForm(props: IFlexFormProps) {
         return !props.hideFields.includes(fieldName);
       })
       .map((field) => {
-        const { fieldInfo, defaultComponent } = getDefaultComponentForScalar(config, field, rgUIContext.defaultComponents);
+        const { fieldInfo, defaultComponent } = getDefaultComponentForScalar(config, field, rgUIContext.defaultComponents.flexFormComponents);
         const fieldTypePascal = Case.pascal(fieldInfo.typeName);
 
         const Component = props.components?.[fieldInfo.name] || (fieldInfo.relationship && RelationshipInput) || defaultComponent;

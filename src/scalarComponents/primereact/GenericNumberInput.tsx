@@ -7,7 +7,7 @@ import LabelFor from './LabelFor'
 
 export interface IGenericNumberInputProps extends ScalarComponentPropsBase {
   inputNumberProps?: InputNumberProps
-  mode: 'decimal' | 'currency'
+  mode?: 'decimal' | 'currency'
 }
 
 const GenericNumberInput: FunctionComponent<IGenericNumberInputProps> =
@@ -34,7 +34,7 @@ const GenericNumberInput: FunctionComponent<IGenericNumberInputProps> =
             }}
             {...inputControllerProps}
             className="p-inputtext-sm w-full"
-            mode={mode}
+            mode={mode || 'decimal'}
             {...inputNumberProps}
           />
           <LabelFor fieldInfo={fieldInfo} />
