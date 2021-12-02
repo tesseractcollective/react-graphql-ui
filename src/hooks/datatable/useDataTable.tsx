@@ -71,6 +71,7 @@ export interface ColumnPropsForString extends ColumnProps {
 }
 
 export interface ToolbarOptions {
+  searchText?: string;
   setSearchText: (text: string) => void;
 }
 
@@ -291,10 +292,10 @@ export default function useDataTable<T = Record<string, any>>(
     }
 
     if (typeof args.toolbar?.left === 'function') {
-      left = args.toolbar.left({ setSearchText: filterProps.setSearchText });
+      left = args.toolbar.left({ setSearchText: filterProps.setSearchText, searchText: filterProps.searchText  });
     }
     if (typeof args.toolbar?.right === 'function') {
-      right = args.toolbar.right({ setSearchText: filterProps.setSearchText });
+      right = args.toolbar.right({ setSearchText: filterProps.setSearchText, searchText: filterProps.searchText });
     }
 
     return <Toolbar className="p-mb-4" right={right} left={left}></Toolbar>;
