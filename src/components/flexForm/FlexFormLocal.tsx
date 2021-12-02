@@ -119,7 +119,7 @@ function FlexFormLocal(props: FlexFormLocalProps) {
           props.components?.[fieldInfo.name] ||
           (fieldInfo.relationship && RelationshipInput) ||
           // @ts-ignore
-          rgUIContext.defaultComponents[fieldTypePascal + 'Input']
+          rgUIContext.defaultComponents.flexFormComponents[fieldTypePascal + 'Input']
         if (!Component) {
           console.warn(`Missing component for field: ${fieldInfo.name} and type ${fieldInfo.typeName}. 
           * Pass it in on props.components ={ ${fieldInfo.typeName}: <MyComponent />}
