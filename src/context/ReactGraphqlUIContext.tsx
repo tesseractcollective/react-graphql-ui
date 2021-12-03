@@ -20,3 +20,4 @@ export const ReactGraphqlUIContext = React.createContext<IReactGraphqlUIContext>
   },
   configsMap: {},
 });
+ReactGraphqlUIContext.displayName = "ReactGraphqlUIContext";
