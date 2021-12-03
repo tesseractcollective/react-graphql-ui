@@ -1,6 +1,6 @@
 import { HasuraDataConfig, UseQueryOneProps, useReactGraphql, UseReactGraphqlApi } from '@tesseractcollective/react-graphql';
 import Case from 'case';
-import _ from 'lodash';
+import {map} from 'lodash';
 import { Button } from 'primereact/button';
 import React, { ReactElement, useContext, useEffect, useMemo, useState } from 'react';
 import { RegisterOptions, useForm } from 'react-hook-form';
@@ -126,7 +126,7 @@ function FlexForm(props: IFlexFormProps) {
     if (_fields?.length) {
       return _fields;
     }
-    const autoFields = _.map(config.fields?.fieldSimpleMap ?? {}, (field) => field?.name ?? '');
+    const autoFields = map(config.fields?.fieldSimpleMap ?? {}, (field) => field?.name ?? '');
     if (autoFields) return autoFields;
     return [];
   }, [_fields, config]);

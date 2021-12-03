@@ -1,6 +1,6 @@
 import { HasuraDataConfig } from '@tesseractcollective/react-graphql'
 import Case from 'case'
-import _ from 'lodash'
+import {map} from 'lodash'
 import { Column, ColumnProps } from 'primereact/column'
 import React, { ReactElement, useMemo } from 'react'
 
@@ -18,7 +18,7 @@ export default function useDataTableColumns(args: {
   const { gqlConfig } = args
 
   const columns = useMemo(() => {
-    const columnsArr: any[] = _.map(
+    const columnsArr: any[] = map(
       gqlConfig.fields?.fieldSimpleMap,
       (fieldOpts, key) => {
         let body

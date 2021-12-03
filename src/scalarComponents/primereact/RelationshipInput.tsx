@@ -1,5 +1,5 @@
 import { HasuraDataConfig } from '@tesseractcollective/react-graphql';
-import _ from 'lodash';
+import {find} from 'lodash';
 
 import React, { FunctionComponent, useContext, useEffect, useMemo } from 'react';
 import SelectViaRelationship from '../../components/SelectViaRelationship';
@@ -25,7 +25,7 @@ const RelationshipInput: FunctionComponent<ScalarComponentPropsBase> = function 
     configs?.[fieldInfo.relationship.table] ||
     HasuraConfig[fieldInfo.relationship.table + 'Select'] ||
     HasuraConfig[fieldInfo.relationship.table] ||
-    _.find(HasuraConfig, (val, key) => val.typename === fieldInfo.typeName);
+    find(HasuraConfig, (val, key) => val.typename === fieldInfo.typeName);
 
   useEffect(() => {
     if (!relationshipConfig) {
