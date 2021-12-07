@@ -1,7 +1,7 @@
 import React, { FunctionComponent } from 'react'
 import { bs } from '@tesseractcollective/react-graphql'
 import { ScalarComponentPropsBase } from '../../types/generic';
-import GenericNumberInput from './GenericNumberInput'
+import NumberInput from './NumberInput'
 
 export interface IFloatInputProps extends ScalarComponentPropsBase {}
 
@@ -9,7 +9,7 @@ const FloatInput: FunctionComponent<IFloatInputProps> = function FloatInput(
   props
 ) {
   return (
-    <GenericNumberInput
+    <NumberInput
       mode="decimal"
       {...props}
       inputNumberProps={{

@@ -1,8 +1,8 @@
-import { Editor } from 'primereact/editor';
 import { InputMask } from 'primereact/inputmask';
 import { InputText } from 'primereact/inputtext';
 import React, { FunctionComponent } from 'react';
 import { useController } from 'react-hook-form';
+import { RichTextInput } from '.';
 import { ScalarComponentPropsBase } from '../../types/generic';
 import LabelFor from './LabelFor';
 
@@ -12,14 +12,22 @@ export interface IStringInputProps extends ScalarComponentPropsBase {
   helpText?: string; // TODO: Should this go on ScalarComponentPropsBase for all types instead?
 }
 
-const StringInput: FunctionComponent<IStringInputProps> = function StringInput({
+const StringInput: FunctionComponent<IStringInputProps> = (props: IStringInputProps) => {
+  if (props.richText) {
+    // This specifies what options are available to the user in the toolbar
+    return <RichTextInput {...props} />;
+  }
+  return <StringInputInternal {...props} />
+}
+
+const StringInputInternal: FunctionComponent<IStringInputProps> = ({
   fieldInfo,
   control,
   mask,
   richText,
   rules,
   ...passthroughProps
-}) {
+}) => {
   const {
     field: { ref, ...inputProps },
     fieldState: { invalid, isTouched, isDirty, error },
@@ -50,70 +58,6 @@ const StringInput: FunctionComponent<IStringInputProps> = function StringInput({
         ref={ref}
         {...inputProps}
         className="p-inputtext-sm w-full"
-        {...passthroughProps}
-      />
-    );
-  } else if (richText) {
-    // This specifies what options are available to the user in the toolbar
-    const toolbarHeader = (
-      <span className="ql-formats">
-        <select className="ql-size" aria-label="Size" defaultValue="normal">
-          <option label="Small" value="small" />
-          <option label="Normal" value="normal" />
-          <option label="Large" value="large" />
-        </select>
-        <button className="ql-bold" aria-label="Bold"></button>
-        <button className="ql-italic" aria-label="Italic"></button>
-        <button className="ql-underline" aria-label="Underline"></button>
-        <button className="ql-strike" aria-label="Strike"></button>
-        <button className="ql-link" aria-label="Link"></button>
-        <button className="ql-blockquote" aria-label="Blockquote"></button>
-        <button
-          className="ql-list"
-          value="ordered"
-          aria-label="Ordered List"
-        ></button>
-        <button
-          className="ql-list"
-          value="bullet"
-          aria-label="Unordered List"
-        ></button>
-        <button className="ql-align" aria-label="Align"></button>
-      </span>
-    );
-
-    inputComponent = (
-      <Editor
-        id={'ff-' + fieldInfo.name}
-        ref={ref}
-        {...inputProps}
-        // need to manually trigger the onChange from onTextChange
-        onTextChange={(e) => inputProps.onChange(e.htmlValue)}
-        // HACK: There is currently (afaik) no easy way to detect the focus event
-        // for the Editor component, meaning the floatlabel won't work correctly
-        // setting this class is a hack to force the float label to always appear
-        // as though the wrapper has been filled to have the proper style
-        className={'p-inputwrapper-filled'}
-        // This changes what buttons are displayed to change formatting
-        headerTemplate={toolbarHeader}
-        // This format will allow you to paste with those formats even if there's no
-        // button for them in the toolbar
-        formats={[
-          'bold',
-          'font',
-          'color',
-          'italic',
-          'link',
-          'size',
-          'strike',
-          'underline',
-          'blockquote',
-          'header',
-          'indent',
-          'list',
-          'align',
-          'direction',
-        ]}
         {...passthroughProps}
       />
     );

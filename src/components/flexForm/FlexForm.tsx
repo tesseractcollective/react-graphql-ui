@@ -62,7 +62,7 @@ export interface IFlexFormProps {
   existingRecordQueryArgs?: UseQueryOneProps;
 }
 
-function FlexForm(props: IFlexFormProps) {
+const FlexForm: React.FunctionComponent<IFlexFormProps> = (props: IFlexFormProps) => {
   //Spread primary key onto initial variables for update
   const {
     config,

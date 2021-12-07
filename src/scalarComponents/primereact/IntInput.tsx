@@ -1,11 +1,11 @@
 import React, { FunctionComponent } from 'react'
 import { ScalarComponentPropsBase } from '../../types/generic';
-import GenericNumberInput from './GenericNumberInput'
+import NumberInput from './NumberInput'
 
 export interface IIntInputProps extends ScalarComponentPropsBase {}
 
 const IntInput: FunctionComponent<IIntInputProps> = function IntInput(props) {
-  return <GenericNumberInput mode="decimal" {...props} 
+  return <NumberInput mode="decimal" {...props} 
   inputNumberProps={{
     ...props
   } as any}/>

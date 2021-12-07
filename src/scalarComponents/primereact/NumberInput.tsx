@@ -5,13 +5,13 @@ import { InputNumber, InputNumberProps } from 'primereact/inputnumber'
 import Case from 'case'
 import LabelFor from './LabelFor'
 
-export interface IGenericNumberInputProps extends ScalarComponentPropsBase {
+export interface INumberInputProps extends ScalarComponentPropsBase {
   inputNumberProps?: InputNumberProps
   mode?: 'decimal' | 'currency'
 }
 
-const GenericNumberInput: FunctionComponent<IGenericNumberInputProps> =
-  function GenericNumberInput({ fieldInfo, control, mode, rules, inputNumberProps }) {
+const NumberInput: FunctionComponent<INumberInputProps> =
+  function NumberInput({ fieldInfo, control, mode, rules, inputNumberProps }) {
     const {
       field: { ref, onChange, ...inputControllerProps },
       fieldState: { invalid, isTouched, isDirty, error },
@@ -44,4 +44,4 @@ const GenericNumberInput: FunctionComponent<IGenericNumberInputProps> =
     )
   }
 
-export default GenericNumberInput
+export default NumberInput
