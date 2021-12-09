@@ -193,8 +193,7 @@ export default function useDataTable<T = Record<string, any>>(
   });
 
   const orderByProps = useDataTableOrderBy({
-    queryArgsAtom: queryArgsAtom || backupAtom,
-    queryManyState
+    queryArgsAtom: queryArgsAtom || backupAtom
   });
 
   const filterProps = useDataTableWhere({
