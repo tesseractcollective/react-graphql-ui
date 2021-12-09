@@ -182,7 +182,9 @@ export default function useDataTable<T = Record<string, any>>(
 
   const queryManyState = isQueryStateProvided
     ? args.queryManyState
-    : useReactGraphql(gqlConfig).useInfiniteQueryMany<T>(queryArgs);
+    : useReactGraphql(gqlConfig).useInfiniteQueryMany<T>({isInfinite: false, ...queryArgs});
+
+
 
   const paginationProps = useDataTablePagination({
     queryManyState: queryManyState,
@@ -192,6 +194,7 @@ export default function useDataTable<T = Record<string, any>>(
 
   const orderByProps = useDataTableOrderBy({
     queryArgsAtom: queryArgsAtom || backupAtom,
+    queryManyState
   });
 
   const filterProps = useDataTableWhere({
