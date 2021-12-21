@@ -112,7 +112,7 @@ export interface UseDataTableArgs<T> {
       | 'searchInput'
       | 'insertButton'
       | ((toolbarOptions: ToolbarOptions) => JSX.Element);
-    whereBuilder?: (searchText: string | undefined) => Record<string, any>;
+    whereBuilder?: (searchText: string | undefined, event?: DataTableFilterParams) => Record<string, any>;
     debounceMS?: number;
     searchPlaceholder?: string;
   };

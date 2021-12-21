@@ -53,7 +53,7 @@ export default function useDataTableWhere<T>(args: {
     setLastEvent(event);
 
     if (args.dataTableArgs?.toolbar?.whereBuilder) {
-      const _where = args.dataTableArgs?.toolbar?.whereBuilder(searchText);
+      const _where = args.dataTableArgs?.toolbar?.whereBuilder(searchText, event);
       setWhere(_where);
       return;
     } 
@@ -65,7 +65,7 @@ export default function useDataTableWhere<T>(args: {
 
       const isStringBasedSearch = ['String', 'citext'].includes(fieldScalarType);
       const matchMode = event.filters[columnName].matchMode;
-      
+
       const operationStr = isStringBasedSearch
         ? reactPrimeFilterMatchModeToHasuraStringOpration[matchMode]
         : reactPrimeFilterMatchModeToHasuraEqualityOpration[matchMode];
