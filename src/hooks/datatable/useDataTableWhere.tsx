@@ -50,14 +50,22 @@ export default function useDataTableWhere<T>(args: {
   const rgUIContext = useContext<any>(ReactGraphqlUIContext);
 
   const onFilter = (event: DataTableFilterParams) => {
+    setLastEvent(event);
+
+    if (args.dataTableArgs?.toolbar?.whereBuilder) {
+      const _where = args.dataTableArgs?.toolbar?.whereBuilder(searchText);
+      setWhere(_where);
+      return;
+    } 
+    
     const columnNames = Object.keys(event.filters);
 
     const whereClause = columnNames.reduce((whereC, columnName) => {
       const fieldScalarType = args.gqlConfig?.fields?.fieldSimpleMap?.[columnName]?.typeName || '';
 
       const isStringBasedSearch = ['String', 'citext'].includes(fieldScalarType);
-
       const matchMode = event.filters[columnName].matchMode;
+      
       const operationStr = isStringBasedSearch
         ? reactPrimeFilterMatchModeToHasuraStringOpration[matchMode]
         : reactPrimeFilterMatchModeToHasuraEqualityOpration[matchMode];
@@ -76,7 +84,6 @@ export default function useDataTableWhere<T>(args: {
       ...queryArgs,
       where: whereClause,
     });
-    setLastEvent(event);
   };
 
   const searchIsInToolbar = args.dataTableArgs?.toolbar?.left === 'searchInput' || args.dataTableArgs?.toolbar?.right === 'searchInput';
