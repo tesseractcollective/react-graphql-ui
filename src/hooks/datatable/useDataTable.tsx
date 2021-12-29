@@ -107,10 +107,12 @@ export interface UseDataTableArgs<T> {
     left?:
       | 'searchInput'
       | 'insertButton'
+      | 'refresh'
       | ((toolbarOptions: ToolbarOptions) => JSX.Element);
     right?:
       | 'searchInput'
       | 'insertButton'
+      | 'refresh'
       | ((toolbarOptions: ToolbarOptions) => JSX.Element);
     whereBuilder?: (searchText: string | undefined, event?: DataTableFilterParams) => Record<string, any>;
     debounceMS?: number;
@@ -185,8 +187,7 @@ export default function useDataTable<T = Record<string, any>>(
     : useReactGraphql(gqlConfig).useInfiniteQueryMany<T>({isInfinite: false, ...queryArgs});
 
 
-
-  const paginationProps = useDataTablePagination({
+  const {onRefresh: refreshPaginatedTable ,...paginationProps} = useDataTablePagination({
     queryManyState: queryManyState,
     pageSize: pageSize,
     queryArgsAtom: queryArgsAtom || backupAtom,
@@ -242,6 +243,9 @@ export default function useDataTable<T = Record<string, any>>(
     args.toolbar?.left === 'insertButton' ||
     args.toolbar?.right === 'insertButton';
 
+  const needsRefreshButton =
+    args.toolbar?.left === 'refresh' || args.toolbar?.right === 'refresh';
+
   const insertButton = useMemo(() => {
     if (!needsInsertButton) {
       return;
@@ -255,6 +259,19 @@ export default function useDataTable<T = Record<string, any>>(
       />
     );
   }, [needsInsertButton]);
+
+  const refreshButton = useMemo(() => {
+    if (!needsRefreshButton) {
+      return;
+    }
+    return (
+      <Button
+        icon="pi pi-refresh"
+        className="p-button-text"
+        onClick={refreshPaginatedTable}
+      />
+    );
+  }, [needsRefreshButton])
 
   const toolbarComponent = useMemo(() => {
     let left;
@@ -274,6 +291,12 @@ export default function useDataTable<T = Record<string, any>>(
       );
     }
 
+    if (args.toolbar?.left === 'refresh') {
+      left = refreshButton;
+    }
+    if (args.toolbar?.right === 'refresh') {
+      right = refreshButton;
+    }
     if (
       args.insert === 'toolBarLeft' ||
       args.toolbar?.left === 'insertButton'
