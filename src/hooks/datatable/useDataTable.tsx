@@ -200,6 +200,7 @@ export default function useDataTable<T = Record<string, any>>(
     gqlConfig,
     queryArgsAtom: queryArgsAtom || backupAtom,
     dataTableArgs: args,
+    queryArgsWhere: args.queryArgs?.where,
   });
 
   const tableProps = useMemo<DataTableSpreadableProps>(() => {
