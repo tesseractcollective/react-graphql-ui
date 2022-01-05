@@ -40,6 +40,7 @@ export default function useDataTableWhere<T>(args: {
   queryArgsAtom: PrimitiveAtom<UseDataTableQueryArgsAtom>;
   gqlConfig?: HasuraDataConfig;
   dataTableArgs?: UseDataTableArgs<T>;
+  queryArgsWhere?: Record<string, any>;
 }): UseDataTableWhere<T> {
   const [queryArgs, setQueryArgs] = useAtom(args.queryArgsAtom);
   const [lastEvent, setLastEvent] = useState<DataTableFilterParams>();
@@ -82,7 +83,7 @@ export default function useDataTableWhere<T>(args: {
 
     setQueryArgs({
       ...queryArgs,
-      where: whereClause,
+      where: { _and: [whereClause , args.queryArgsWhere || {}] },
     });
   };
 
@@ -131,7 +132,7 @@ export default function useDataTableWhere<T>(args: {
     if (where || queryArgs.where) {
       setQueryArgs({
         ...queryArgs,
-        where,
+        where: { _and: [where , args.queryArgsWhere || {}] },
       });
     }
   }, [where]);
