@@ -14,6 +14,7 @@ export interface DataTablePaginationProps<T> {
   lazy: boolean
   first: number
   currentRows: T[]
+  onRefresh?: () => void
 }
 
 export default function useDataTablePagination<T = any>(args: {
@@ -58,6 +59,10 @@ export default function useDataTablePagination<T = any>(args: {
       ...event,
     })
   }
+
+  const onRefresh = () => {
+    args.queryManyState?.refresh();
+  };
 
   useEffect(() => {
     setLazyParams({
@@ -181,6 +186,7 @@ export default function useDataTablePagination<T = any>(args: {
     loading: args.queryManyState?.queryState?.fetching,
     first: lazyParams.first,
     currentRows,
+    onRefresh,
     // rowsPerPageOptions: [50],
   }
 }
