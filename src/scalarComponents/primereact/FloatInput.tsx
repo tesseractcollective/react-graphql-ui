@@ -1,12 +1,12 @@
 import React, { FunctionComponent } from 'react'
 import { bs } from '@tesseractcollective/react-graphql'
-import { ScalarComponentPropsBase } from '../../types/generic';
+import { ScalarComponentPropsBase } from '../../types/generic'
 import NumberInput from './NumberInput'
 
 export interface IFloatInputProps extends ScalarComponentPropsBase {}
 
 const FloatInput: FunctionComponent<IFloatInputProps> = function FloatInput(
-  props
+  props: any
 ) {
   return (
     <NumberInput
@@ -14,7 +14,8 @@ const FloatInput: FunctionComponent<IFloatInputProps> = function FloatInput(
       {...props}
       inputNumberProps={{
         maxFractionDigits: 2,
-        ...props
+        minFractionDigits: 2,
+        ...props,
       }}
     />
   )
