@@ -50,7 +50,7 @@ export default function useDataTablePagination<T = any>(args: {
     )
     if (
       event.page >= lazyParams.page &&
-      event.page * pageSize >= (args.queryManyState?.items?.length || 0)
+      event.first + pageSize >= (args.queryManyState?.items?.length || 0)
     ) {
       args.queryManyState?.loadNextPage()
     }
