@@ -100,7 +100,7 @@ export interface UseDataTableArgs<T> {
   queryArgs?: Partial<IUseInfiniteQueryMany>;
   sortable?: boolean;
   sortDefaultSort?: any;
-  filterable?: boolean;
+  filterable?: boolean|Array<string>;
   columnProps?: Record<string, ColumnPropsForEquality | ColumnPropsForString>;
   onRowClick?: (row: any, path: string) => void;
   toolbar?: {
@@ -202,6 +202,7 @@ export default function useDataTable<T = Record<string, any>>(
     queryArgsAtom: queryArgsAtom || backupAtom,
     dataTableArgs: args,
     queryArgsWhere: args.queryArgs?.where,
+    filterable: args.filterable
   });
 
   const tableProps = useMemo<DataTableSpreadableProps>(() => {

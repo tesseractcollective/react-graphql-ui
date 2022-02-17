@@ -12,7 +12,7 @@ export interface ColumnFromConfig {
 export default function useDataTableColumns(args: {
   gqlConfig: HasuraDataConfig
   sortable?: boolean
-  filterable?: boolean
+  filterable?: boolean|Array<string>
   columnProps?: Record<string, ColumnProps>
 }): ColumnFromConfig[] {
   const { gqlConfig } = args
@@ -36,7 +36,11 @@ export default function useDataTableColumns(args: {
               field={fieldOpts.name}
               header={Case.sentence(fieldOpts.name)}
               sortable={args.sortable}
-              filter={args.filterable}
+              filter={args.filterable == true || 
+                (Array.isArray(args.filterable) && 
+                  args.filterable.includes(fieldOpts.name) 
+                )
+              }
               body={body}
               {...args.columnProps?.[fieldOpts.name]}
             />
