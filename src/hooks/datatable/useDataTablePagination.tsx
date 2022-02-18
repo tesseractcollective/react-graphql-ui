@@ -48,12 +48,6 @@ export default function useDataTablePagination<T = any>(args: {
       pageCount:${event.pageCount}    rows:${event.rows}
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~`
     )
-    if (
-      event.page >= lazyParams.page &&
-      event.page * pageSize >= (args.queryManyState?.items?.length || 0)
-    ) {
-      args.queryManyState?.loadNextPage()
-    }
     setLazyParams({
       ...lazyParams,
       ...event,
@@ -168,6 +162,13 @@ export default function useDataTablePagination<T = any>(args: {
     },
   }
 
+  useEffect(()=>{
+    const endIndex = lazyParams.first + pageSize
+    if ( endIndex > (args.queryManyState?.items?.length || 0) ) {
+      args.queryManyState?.loadNextPage()
+    }
+  }, [lazyParams, args.queryManyState?.items])
+  
   const currentRows = useMemo(() => {
     const startIndex = lazyParams.first
     const endIndex = lazyParams.first + pageSize

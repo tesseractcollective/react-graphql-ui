@@ -1,39 +1,100 @@
-import React, { useEffect, useCallback } from 'react';
-import { ReactGraphqlUIContext } from '../../context/ReactGraphqlUIContext';
-import { HasuraDataConfig } from '@tesseractcollective/react-graphql';
-import { PrimitiveAtom, useAtom } from 'jotai';
-import { DataTableFilterMatchModeType, DataTableFilterParams } from 'primereact/datatable';
-import { useContext, useMemo, useState } from 'react';
-import { UseDataTableArgs, UseDataTableQueryArgsAtom } from './useDataTable';
-import useDebounce from '../useDebounce';
-import { InputText } from 'primereact/inputtext';
+import React, { useEffect, useCallback } from "react";
+import { ReactGraphqlUIContext } from "../../context/ReactGraphqlUIContext";
+import { HasuraDataConfig } from "@tesseractcollective/react-graphql";
+import { PrimitiveAtom, useAtom } from "jotai";
+import {
+  DataTableFilterMatchModeType,
+  DataTableFilterParams,
+  DataTableFilterMetaData,
+  DataTableOperatorFilterMetaData,
+} from "primereact/datatable";
+import { useContext, useMemo, useState } from "react";
+import { UseDataTableArgs, UseDataTableQueryArgsAtom } from "./useDataTable";
+import useDebounce from "../useDebounce";
+import { InputText } from "primereact/inputtext";
 
-const reactPrimeFilterMatchModeToHasuraStringOpration: Record<DataTableFilterMatchModeType, string> = {
-  contains: '_like',
-  equals: '_eq',
-  endsWith: '_like',
-  gt: '_gt',
-  lt: '_lt',
-  gte: '_gte',
-  lte: '_lte',
-  in: '_in',
-  notEquals: '_neq',
-  startsWith: '_like',
-  custom: '_like',
+const reactPrimeFilterMatchModeToHasuraStringOpration: Record<
+  DataTableFilterMatchModeType,
+  string
+> = {
+  contains: "_like",
+  equals: "_eq",
+  endsWith: "_like",
+  gt: "_gt",
+  lt: "_lt",
+  gte: "_gte",
+  lte: "_lte",
+  in: "_in",
+  notEquals: "_neq",
+  startsWith: "_like",
+  custom: "_like",
+  notContains: "_nlike",
+  between: "_like",
+  dateIs: "_like",
+  dateIsNot: "_nlike",
+  dateBefore: "_lte",
+  dateAfter: "_gte",
 };
-const reactPrimeFilterMatchModeToHasuraEqualityOpration: Record<DataTableFilterMatchModeType, string> = {
-  contains: '_eq',
-  equals: '_eq',
-  endsWith: '_eq',
-  gt: '_gt',
-  lt: '_lt',
-  gte: '_gte',
-  lte: '_lte',
-  in: '_in',
-  notEquals: '_neq',
-  startsWith: '_eq',
-  custom: '_eq',
+const reactPrimeFilterMatchModeToHasuraEqualityOpration: Record<
+  DataTableFilterMatchModeType,
+  string
+> = {
+  contains: "_eq",
+  equals: "_eq",
+  endsWith: "_eq",
+  gt: "_gt",
+  lt: "_lt",
+  gte: "_gte",
+  lte: "_lte",
+  in: "_in",
+  notEquals: "_neq",
+  startsWith: "_eq",
+  custom: "_eq",
+  notContains: "_neq",
+  between: "_like",
+  dateIs: "_like",
+  dateIsNot: "_nlike",
+  dateBefore: "_lte",
+  dateAfter: "_gte",
 };
+
+const reactPrimeFilterMatchModeToHasuraEqualityObject: Record<
+  DataTableFilterMatchModeType,
+  Function
+> = {
+  contains: (value: any) =>
+    typeof value == "string" ? { _ilike: `%${value}%` } : { _eq: value },
+  equals: (value: any) => ({ _eq: value }),
+  endsWith: (value: any) =>
+    typeof value == "string" ? { _ilike: `%${value}` } : { _eq: value },
+  gt: (value: any) => ({ _gt: value }),
+  lt: (value: any) => ({ _lt: value }),
+  gte: (value: any) => ({ _gte: value }),
+  lte: (value: any) => ({ _lte: value }),
+  in: (value: any) => ({ _in: value }),
+  notEquals: (value: any) => ({ _neq: value }),
+  startsWith: (value: any) =>
+    typeof value == "string" ? { _ilike: `${value}%` } : { _eq: value },
+  custom: (value: any) => ({ _ilike: value }),
+  notContains: (value: any) =>
+    typeof value == "string" ? { _nilike: `%${value}%` } : { _neq: value },
+  between: (value: any) => ({ _ilike: value }),
+  dateIs: (value: Date) => ({
+    _gte: value,
+    _lt: new Date(value.getTime() + 86400000),
+  }),
+  dateIsNot: (value: Date) => ({
+    _lt: value,
+    _gte: new Date(value.getTime() + 86400000),
+  }),
+  dateBefore: (value: Date) => ({ _lt: value }),
+  dateAfter: (value: Date) => ({ _gt: value }),
+};
+
+const buildNestedObject = (keyArray: Array<string>, value: any) =>
+  keyArray.reverse().reduce(function (o, s) {
+    return { [s]: o };
+  }, value);
 
 //Need to add sortable to your columns <Column field="..." sortable />
 export default function useDataTableWhere<T>(args: {
@@ -41,9 +102,30 @@ export default function useDataTableWhere<T>(args: {
   gqlConfig?: HasuraDataConfig;
   dataTableArgs?: UseDataTableArgs<T>;
   queryArgsWhere?: Record<string, any>;
+  filterable?: boolean | Array<string>;
 }): UseDataTableWhere<T> {
   const [queryArgs, setQueryArgs] = useAtom(args.queryArgsAtom);
-  const [lastEvent, setLastEvent] = useState<DataTableFilterParams>();
+  const [lastEvent, setLastEvent] = useState<DataTableFilterParams | undefined>(
+    Array.isArray(args.filterable)
+      ? {
+          filters: args.filterable.reduce(
+            (prev, columnName) => ({
+              ...prev,
+              [columnName]: {
+                operator: "and",
+                constraints: [
+                  {
+                    value: null,
+                    matchMode: "startsWith",
+                  },
+                ],
+              },
+            }),
+            {}
+          ),
+        }
+      : undefined
+  );
 
   const [searchText, setSearchText] = useState<string>();
   const [where, setWhere] = useState<Record<string, any>>();
@@ -54,53 +136,102 @@ export default function useDataTableWhere<T>(args: {
     setLastEvent(event);
 
     if (args.dataTableArgs?.toolbar?.whereBuilder) {
-      const _where = args.dataTableArgs?.toolbar?.whereBuilder(searchText, event);
+      const _where = args.dataTableArgs?.toolbar?.whereBuilder(
+        searchText,
+        event
+      );
       setWhere(_where);
       return;
-    } 
-    
+    }
+
     const columnNames = Object.keys(event.filters);
 
     const whereClause = columnNames.reduce((whereC, columnName) => {
-      const fieldScalarType = args.gqlConfig?.fields?.fieldSimpleMap?.[columnName]?.typeName || '';
+      if ("matchMode" in event.filters[columnName]) {
+        const fieldScalarType =
+          args.gqlConfig?.fields?.fieldSimpleMap?.[columnName]?.typeName || "";
 
-      const isStringBasedSearch = ['String', 'citext'].includes(fieldScalarType);
-      const matchMode = event.filters[columnName].matchMode;
+        const isStringBasedSearch = ["String", "citext"].includes(
+          fieldScalarType
+        );
+        const columnFilter = event.filters[
+          columnName
+        ] as DataTableFilterMetaData;
+        const matchMode = columnFilter.matchMode;
 
-      const operationStr = isStringBasedSearch
-        ? reactPrimeFilterMatchModeToHasuraStringOpration[matchMode]
-        : reactPrimeFilterMatchModeToHasuraEqualityOpration[matchMode];
+        const operationStr = isStringBasedSearch
+          ? reactPrimeFilterMatchModeToHasuraStringOpration[matchMode]
+          : reactPrimeFilterMatchModeToHasuraEqualityOpration[matchMode];
 
-      return {
-        ...whereC,
-        [columnName]: {
-          [operationStr]: `${isStringBasedSearch && ['contains', 'endsWith'].includes(matchMode) ? '%' : ''}${event.filters[columnName].value}${
-            isStringBasedSearch && ['contains', 'startsWith'].includes(matchMode) ? '%' : ''
-          }`,
-        },
-      };
+        return {
+          _and: [
+            whereC,
+            {
+              [columnName]: {
+                [operationStr]: `${
+                  isStringBasedSearch &&
+                  ["contains", "endsWith", "notContains"].includes(matchMode)
+                    ? "%"
+                    : ""
+                }${columnFilter.value}${
+                  isStringBasedSearch &&
+                  ["contains", "startsWith", "notContains"].includes(matchMode)
+                    ? "%"
+                    : ""
+                }`,
+              },
+            },
+          ],
+        };
+      } else {
+        const columnFilter = event.filters[
+          columnName
+        ] as DataTableOperatorFilterMetaData;
+
+        return {
+          _and: [
+            whereC,
+            {
+              [`_${columnFilter.operator}`]: columnFilter.constraints.map(
+                (constraint) =>
+                  constraint.value
+                    ? buildNestedObject(
+                        columnName.split("."),
+                        reactPrimeFilterMatchModeToHasuraEqualityObject[
+                          constraint.matchMode
+                        ](constraint.value)
+                      )
+                    : {}
+              ),
+            },
+          ],
+        };
+      }
     }, {});
 
     setQueryArgs({
       ...queryArgs,
-      where: { _and: [whereClause , args.queryArgsWhere || {}] },
+      where: { _and: [whereClause, args.queryArgsWhere || {}] },
     });
   };
 
-  const searchIsInToolbar = args.dataTableArgs?.toolbar?.left === 'searchInput' || args.dataTableArgs?.toolbar?.right === 'searchInput';
+  const searchIsInToolbar =
+    args.dataTableArgs?.toolbar?.left === "searchInput" ||
+    args.dataTableArgs?.toolbar?.right === "searchInput";
 
   const searchInput = useMemo(() => {
     if (!searchIsInToolbar) {
       return null;
     }
 
-    const SearchInputComponent = rgUIContext.defaultComponents?.['SearchInput'] || InputText;
+    const SearchInputComponent =
+      rgUIContext.defaultComponents?.["SearchInput"] || InputText;
 
     return (
       <SearchInputComponent
         value={searchText}
         onChange={(e: any) => setSearchText(e.target.value)}
-        placeholder={args.dataTableArgs?.toolbar?.searchPlaceholder || 'Search'}
+        placeholder={args.dataTableArgs?.toolbar?.searchPlaceholder || "Search"}
       />
     );
   }, [args.dataTableArgs?.toolbar?.left, args.dataTableArgs?.toolbar?.right]);
@@ -112,9 +243,9 @@ export default function useDataTableWhere<T>(args: {
         setWhere(_where);
       } else {
         console.error(
-          'useDataTable:useDataTableWhere:' +
+          "useDataTable:useDataTableWhere:" +
             args.gqlConfig?.typename +
-            ': To use the SeachInput in the toolbar or standalone, you must include the toolbar.whereBuilder arg in your useDataTable options.',
+            ": To use the SeachInput in the toolbar or standalone, you must include the toolbar.whereBuilder arg in your useDataTable options."
         );
       }
     } else {
@@ -122,7 +253,10 @@ export default function useDataTableWhere<T>(args: {
     }
   }, [searchText]);
 
-  const resetDebounce = useDebounce(callback, args.dataTableArgs?.toolbar?.debounceMS || 300);
+  const resetDebounce = useDebounce(
+    callback,
+    args.dataTableArgs?.toolbar?.debounceMS || 300
+  );
 
   useEffect(() => {
     resetDebounce();
@@ -132,7 +266,7 @@ export default function useDataTableWhere<T>(args: {
     if (where || queryArgs.where) {
       setQueryArgs({
         ...queryArgs,
-        where: { _and: [where , args.queryArgsWhere || {}] },
+        where: { _and: [where, args.queryArgsWhere || {}] },
       });
     }
   }, [where]);
