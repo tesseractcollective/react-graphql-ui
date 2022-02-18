@@ -1,6 +1,6 @@
 {
   "name": "@tesseractcollective/react-graphql-ui",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "A library built on top of react-graphql to give you various components and hooks to help speed up development. Currently include features for DataTables, Forms, and Dropdowns based on DB relationships",
   "keywords": [
     "graphql",

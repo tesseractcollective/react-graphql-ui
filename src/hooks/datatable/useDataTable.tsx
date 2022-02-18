@@ -101,6 +101,7 @@ export interface UseDataTableArgs<T> {
   sortable?: boolean;
   sortDefaultSort?: any;
   filterable?: boolean|Array<string>;
+  initFilters?: DataTableFilterParams;
   columnProps?: Record<string, ColumnPropsForEquality | ColumnPropsForString>;
   onRowClick?: (row: any, path: string) => void;
   toolbar?: {
@@ -202,7 +203,8 @@ export default function useDataTable<T = Record<string, any>>(
     queryArgsAtom: queryArgsAtom || backupAtom,
     dataTableArgs: args,
     queryArgsWhere: args.queryArgs?.where,
-    filterable: args.filterable
+    filterable: args.filterable,
+    initFilters: args.initFilters
   });
 
   const tableProps = useMemo<DataTableSpreadableProps>(() => {
