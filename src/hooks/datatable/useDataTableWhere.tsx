@@ -103,11 +103,14 @@ export default function useDataTableWhere<T>(args: {
   dataTableArgs?: UseDataTableArgs<T>;
   queryArgsWhere?: Record<string, any>;
   filterable?: boolean | Array<string>;
+  initFilters?: DataTableFilterParams;
 }): UseDataTableWhere<T> {
   const [queryArgs, setQueryArgs] = useAtom(args.queryArgsAtom);
   const [lastEvent, setLastEvent] = useState<DataTableFilterParams | undefined>(
-    Array.isArray(args.filterable)
-      ? {
+    () => {
+      if (args.initFilters) return { filters: args.initFilters };
+      if (Array.isArray(args.filterable))
+        return {
           filters: args.filterable.reduce(
             (prev, columnName) => ({
               ...prev,
@@ -123,8 +126,9 @@ export default function useDataTableWhere<T>(args: {
             }),
             {}
           ),
-        }
-      : undefined
+        };
+      return undefined;
+    }
   );
 
   const [searchText, setSearchText] = useState<string>();
@@ -141,78 +145,82 @@ export default function useDataTableWhere<T>(args: {
         event
       );
       setWhere(_where);
-      return;
     }
+    if (args.filterable) {
+      const columnNames = Object.keys(event.filters);
 
-    const columnNames = Object.keys(event.filters);
+      const whereClause = columnNames.reduce((whereC, columnName) => {
+        if ("matchMode" in event.filters[columnName]) {
+          const fieldScalarType =
+            args.gqlConfig?.fields?.fieldSimpleMap?.[columnName]?.typeName ||
+            "";
 
-    const whereClause = columnNames.reduce((whereC, columnName) => {
-      if ("matchMode" in event.filters[columnName]) {
-        const fieldScalarType =
-          args.gqlConfig?.fields?.fieldSimpleMap?.[columnName]?.typeName || "";
+          const isStringBasedSearch = ["String", "citext"].includes(
+            fieldScalarType
+          );
+          const columnFilter = event.filters[
+            columnName
+          ] as DataTableFilterMetaData;
+          const matchMode = columnFilter.matchMode;
 
-        const isStringBasedSearch = ["String", "citext"].includes(
-          fieldScalarType
-        );
-        const columnFilter = event.filters[
-          columnName
-        ] as DataTableFilterMetaData;
-        const matchMode = columnFilter.matchMode;
+          const operationStr = isStringBasedSearch
+            ? reactPrimeFilterMatchModeToHasuraStringOpration[matchMode]
+            : reactPrimeFilterMatchModeToHasuraEqualityOpration[matchMode];
 
-        const operationStr = isStringBasedSearch
-          ? reactPrimeFilterMatchModeToHasuraStringOpration[matchMode]
-          : reactPrimeFilterMatchModeToHasuraEqualityOpration[matchMode];
-
-        return {
-          _and: [
-            whereC,
-            {
-              [columnName]: {
-                [operationStr]: `${
-                  isStringBasedSearch &&
-                  ["contains", "endsWith", "notContains"].includes(matchMode)
-                    ? "%"
-                    : ""
-                }${columnFilter.value}${
-                  isStringBasedSearch &&
-                  ["contains", "startsWith", "notContains"].includes(matchMode)
-                    ? "%"
-                    : ""
-                }`,
+          return {
+            _and: [
+              whereC,
+              {
+                [columnName]: {
+                  [operationStr]: `${
+                    isStringBasedSearch &&
+                    ["contains", "endsWith", "notContains"].includes(matchMode)
+                      ? "%"
+                      : ""
+                  }${columnFilter.value}${
+                    isStringBasedSearch &&
+                    ["contains", "startsWith", "notContains"].includes(
+                      matchMode
+                    )
+                      ? "%"
+                      : ""
+                  }`,
+                },
               },
-            },
-          ],
-        };
+            ],
+          };
+        } else {
+          const columnFilter = event.filters[
+            columnName
+          ] as DataTableOperatorFilterMetaData;
+
+          return {
+            _and: [
+              whereC,
+              {
+                [`_${columnFilter.operator}`]: columnFilter.constraints.map(
+                  (constraint) =>
+                    constraint.value
+                      ? buildNestedObject(
+                          columnName.split("."),
+                          reactPrimeFilterMatchModeToHasuraEqualityObject[
+                            constraint.matchMode
+                          ](constraint.value)
+                        )
+                      : {}
+                ),
+              },
+            ],
+          };
+        }
+      }, {});
+
+      if (args.dataTableArgs?.toolbar?.whereBuilder) {
+        setWhere((prevWhere) => ({ _and: [prevWhere, whereClause] }));
       } else {
-        const columnFilter = event.filters[
-          columnName
-        ] as DataTableOperatorFilterMetaData;
-
-        return {
-          _and: [
-            whereC,
-            {
-              [`_${columnFilter.operator}`]: columnFilter.constraints.map(
-                (constraint) =>
-                  constraint.value
-                    ? buildNestedObject(
-                        columnName.split("."),
-                        reactPrimeFilterMatchModeToHasuraEqualityObject[
-                          constraint.matchMode
-                        ](constraint.value)
-                      )
-                    : {}
-              ),
-            },
-          ],
-        };
+        setWhere(whereClause);
       }
-    }, {});
-
-    setQueryArgs({
-      ...queryArgs,
-      where: { _and: [whereClause, args.queryArgsWhere || {}] },
-    });
+    }
   };
 
   const searchIsInToolbar =
