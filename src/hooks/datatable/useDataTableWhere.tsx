@@ -6,6 +6,7 @@ import {
   DataTableFilterMatchModeType,
   DataTableFilterParams,
   DataTableFilterMetaData,
+  DataTableFilterMeta,
   DataTableOperatorFilterMetaData,
 } from "primereact/datatable";
 import { FilterMatchMode, FilterOperator } from "primereact/api";
@@ -104,7 +105,7 @@ export default function useDataTableWhere<T>(args: {
   dataTableArgs?: UseDataTableArgs<T>;
   queryArgsWhere?: Record<string, any>;
   filterable?: boolean | Array<string>;
-  initFilters?: DataTableFilterMetaData;
+  initFilters?: DataTableFilterMeta;
 }): UseDataTableWhere<T> {
   const [queryArgs, setQueryArgs] = useAtom(args.queryArgsAtom);
   const [lastEvent, setLastEvent] = useState<DataTableFilterParams | undefined>(
