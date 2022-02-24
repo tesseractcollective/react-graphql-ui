@@ -8,6 +8,7 @@ import {
   DataTableFilterMetaData,
   DataTableOperatorFilterMetaData,
 } from "primereact/datatable";
+import { FilterMatchMode, FilterOperator } from "primereact/api";
 import { useContext, useMemo, useState } from "react";
 import { UseDataTableArgs, UseDataTableQueryArgsAtom } from "./useDataTable";
 import useDebounce from "../useDebounce";
@@ -103,7 +104,7 @@ export default function useDataTableWhere<T>(args: {
   dataTableArgs?: UseDataTableArgs<T>;
   queryArgsWhere?: Record<string, any>;
   filterable?: boolean | Array<string>;
-  initFilters?: DataTableFilterParams;
+  initFilters?: DataTableFilterMetaData;
 }): UseDataTableWhere<T> {
   const [queryArgs, setQueryArgs] = useAtom(args.queryArgsAtom);
   const [lastEvent, setLastEvent] = useState<DataTableFilterParams | undefined>(
@@ -115,11 +116,11 @@ export default function useDataTableWhere<T>(args: {
             (prev, columnName) => ({
               ...prev,
               [columnName]: {
-                operator: "and",
+                operator: FilterOperator.AND,
                 constraints: [
                   {
                     value: null,
-                    matchMode: "startsWith",
+                    matchMode: FilterMatchMode.STARTS_WITH,
                   },
                 ],
               },
@@ -132,7 +133,8 @@ export default function useDataTableWhere<T>(args: {
   );
 
   const [searchText, setSearchText] = useState<string>();
-  const [where, setWhere] = useState<Record<string, any>>();
+  const [searchbarWhere, setSearchbarWhere] = useState<Record<string, any>>();
+  const [filtersWhere, setFiltersWhere] = useState<Record<string, any>>();
 
   const rgUIContext = useContext<any>(ReactGraphqlUIContext);
 
@@ -144,7 +146,7 @@ export default function useDataTableWhere<T>(args: {
         searchText,
         event
       );
-      setWhere(_where);
+      setSearchbarWhere(_where);
     }
     if (args.filterable) {
       const columnNames = Object.keys(event.filters);
@@ -214,12 +216,7 @@ export default function useDataTableWhere<T>(args: {
           };
         }
       }, {});
-
-      if (args.dataTableArgs?.toolbar?.whereBuilder) {
-        setWhere((prevWhere) => ({ _and: [prevWhere, whereClause] }));
-      } else {
-        setWhere(whereClause);
-      }
+      setFiltersWhere(whereClause)
     }
   };
 
@@ -248,7 +245,7 @@ export default function useDataTableWhere<T>(args: {
     if (searchText) {
       if (args.dataTableArgs?.toolbar?.whereBuilder) {
         const _where = args.dataTableArgs?.toolbar?.whereBuilder(searchText);
-        setWhere(_where);
+        setSearchbarWhere(_where);
       } else {
         console.error(
           "useDataTable:useDataTableWhere:" +
@@ -257,7 +254,7 @@ export default function useDataTableWhere<T>(args: {
         );
       }
     } else {
-      setWhere({});
+      setSearchbarWhere({});
     }
   }, [searchText]);
 
@@ -271,13 +268,13 @@ export default function useDataTableWhere<T>(args: {
   }, [searchText]);
 
   useEffect(() => {
-    if (where || queryArgs.where) {
+    if (searchbarWhere || filtersWhere || queryArgs.where) {
       setQueryArgs({
         ...queryArgs,
-        where: { _and: [where, args.queryArgsWhere || {}] },
+        where: { _and: [searchbarWhere || {} , filtersWhere || {} , args.queryArgsWhere || {}] },
       });
     }
-  }, [where]);
+  }, [searchbarWhere,filtersWhere]);
 
   return {
     onFilter,
