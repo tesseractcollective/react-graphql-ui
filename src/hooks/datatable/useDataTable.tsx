@@ -19,7 +19,7 @@ import { Dialog } from 'primereact/dialog';
 import { Toolbar } from 'primereact/toolbar';
 import queryString from 'query-string';
 import React, { ReactNode, useMemo, useState } from 'react';
-import FlexForm, { IFlexFormProps } from '../../components/flexForm/FlexForm';
+import FlexForm from '../../components/flexForm/FlexForm';
 import useDataTableColumns, { ColumnFromConfig } from './useDataTableColumns';
 import useDataTableOrderBy, {
   UseDataTableOrderby,
@@ -28,6 +28,7 @@ import useDataTablePagination, {
   DataTablePaginationProps,
 } from './useDataTablePagination';
 import useDataTableWhere, { UseDataTableWhere } from './useDataTableWhere';
+import { IFlexFormProps } from '../flexForm/useFlexForm';
 
 export interface UseDataTableQueryArgsAtom
   extends Partial<IUseInfiniteQueryMany> {}
