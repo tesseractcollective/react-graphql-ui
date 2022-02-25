@@ -18,5 +18,6 @@ export { default as StringInput } from './StringInput'
 export { default as TextInput } from './TextInput'
 export { default as TimestampInput } from './TimestampInput'
 export { default as TimestamptzInput } from './TimestamptzInput'
+export { default as ToggleInput } from './ToggleInput'
 export { default as UuidInput } from './UuidInput'
 // @endindex
