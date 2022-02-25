@@ -12,6 +12,7 @@ import { Column, ColumnProps } from 'primereact/column';
 import {
   DataTableProps,
   DataTableFilterParams,
+  DataTableFilterMeta,
   DataTableSelectionModeType,
   DataTableSelectionChangeParams,
 } from 'primereact/datatable';
@@ -102,7 +103,7 @@ export interface UseDataTableArgs<T> {
   sortable?: boolean;
   sortDefaultSort?: any;
   filterable?: boolean|Array<string>;
-  initFilters?: DataTableFilterParams;
+  initFilters?: DataTableFilterMeta;
   columnProps?: Record<string, ColumnPropsForEquality | ColumnPropsForString>;
   onRowClick?: (row: any, path: string) => void;
   toolbar?: {
